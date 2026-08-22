@@ -1,0 +1,5 @@
+# ===== 前端直接依赖（Streamlit 页面 + 调后端 API）=====
+
+streamlit==1.61.1
+httpx==0.28.1             # 调后端 HTTP API
+pydantic-settings==2.15.0 # 读 .env 里的后端地址

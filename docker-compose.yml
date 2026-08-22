@@ -1,0 +1,30 @@
+services:
+  backend:
+    build:
+      context: ./backend                       # 后端构建现场 = 仓库里的 backend/ 目录
+    environment:
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      BOCHA_API_KEY: ${BOCHA_API_KEY}
+      DATA_DIR: /app/outputs   # 容器里 BASE_DIR 变成 /，必须覆盖数据目录！
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./outputs:/app/outputs   # 数据持久化（SQLite + Chroma + 上传文档）
+      - ./logs:/logs             # 日志（容器里 LOGS_DIR 变成 /logs）
+      - chroma_cache:/root/.cache/chroma   # embedding 模型缓存
+    restart: on-failure:3
+
+  frontend:
+    build:
+      context: ./frontend                     # 前端构建现场 = 仓库里的 frontend/ 目录
+    environment:
+      BACKEND_BASE_URL: http://backend:8000   # 服务名互访，不是 localhost！
+    ports:
+      - "8501:8501"
+    depends_on:
+      backend:
+        condition: service_healthy   # 后端健康才启动前端
+    restart: on-failure:3
+
+volumes:
+  chroma_cache:    # 命名卷声明（数据卷不需要声明，宿主目录直接挂）

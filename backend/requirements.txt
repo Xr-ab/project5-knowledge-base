@@ -1,0 +1,28 @@
+# ===== 后端直接依赖（代码里 import 过的；传递依赖 pip 自动装，不写）=====
+# 版本 = 本地 venv 验证过能跑通的版本，锁死保证 Docker 里可复现
+
+# 模块2 框架
+fastapi==0.141.1
+uvicorn==0.52.1
+python-multipart==0.0.32   # FastAPI 收 UploadFile 必需，极易漏
+
+# 模块1 配置
+pydantic-settings==2.15.0
+loguru==0.7.3
+
+# 模块3/4 数据库与向量库
+sqlalchemy==2.0.52
+aiosqlite==0.22.1          # 异步 SQLite 驱动（SQLAlchemy async 必需）
+chromadb==1.5.9            # 自带 embedding（all-MiniLM-L6-v2，ONNX）
+
+# 模块4 文档解析
+pypdf==6.16.1
+docx2txt==0.9
+
+# 模块5 Agent 聊天
+langgraph==1.2.11
+langgraph-checkpoint-sqlite==3.1.1   # 会话记忆（独立包，别漏）
+langchain==1.3.15
+langchain-openai==1.5.1
+langchain-core==1.5.5
+httpx==0.28.1             # bocha 搜索工具发请求
