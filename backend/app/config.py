@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     embeddings_model_name: str = "BAAI/bge-small-zh-v1.5"  # 本地向量模型（模块 4 用，无需 key）
     bocha_api_key: str                                    # 博查搜索 Key（必填，模块 5 用）
     data_dir: Path = BASE_DIR / "outputs"                 # 数据落盘目录（数据库/向量库都在这）
-
+    jwt_secret: str = "dev-secret-key-change-me"          # JWT 签名密钥（先给个开发用默认值，生产必须换）
     # 从项目根目录 .env 读值；extra="allow" 容忍文件里多余键
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="allow")
 

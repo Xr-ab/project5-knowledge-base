@@ -4,11 +4,13 @@
 不写业务逻辑——业务都在各自的 routes/service 里。
 """
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 from app.chat.routes import chat_router          # 聊天路由（模块 5 填充）
 from app.documents.routes import document_router  # 文档路由（模块 4 填充）
 from app.lifespan import lifespan                 # 启动/关闭钩子（建目录、建表）
 from app.middleware import register_middleware    # 中间件注册（CORS）
+from app.security import create_access_token      # JWT 签发（模块 6）
 from app.threads.routes import thread_router      # 会话路由（模块 3 填充）
 
 version = "v1"
@@ -33,3 +35,15 @@ app.include_router(chat_router, prefix=f"{version_prefix}/chat", tags=["CHAT"])
 async def health():
     """健康检查：给 Docker healthcheck 用（不需要 API Key 也能调）。"""
     return {"status": "ok"}
+
+
+class LoginRequest(BaseModel):
+    """登录请求体：开发期直接拿用户名当身份，不搞密码那套。"""
+    username: str
+
+
+@app.post(f"{version_prefix}/auth/login")
+async def login(req: LoginRequest):
+    """登录：拿用户名换一个 JWT token（24 小时有效）。"""
+    token = create_access_token(req.username)
+    return {"access_token": token, "token_type": "bearer"}

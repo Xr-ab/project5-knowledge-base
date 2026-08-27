@@ -5,18 +5,19 @@
 """
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from app.chat import service as chat_service
 from app.chat.schemas import ChatStreamResponse, Message, PromptInput
 from app.db.main import SessionDep
+from app.security import get_current_user
 from app.threads import service as thread_service
 
 chat_router = APIRouter()
 
 
 @chat_router.post("/{thread_id}")
-async def chat_stream(thread_id: UUID, prompt_input: PromptInput, session: SessionDep):
+async def chat_stream(thread_id: UUID, prompt_input: PromptInput, session: SessionDep, user: str = Depends(get_current_user)):
     """发消息：Agent 处理 + 流式返回 NDJSON。
 
     不设 response_model——返回的是流不是单个 JSON，没法校验。
@@ -27,6 +28,6 @@ async def chat_stream(thread_id: UUID, prompt_input: PromptInput, session: Sessi
 
 
 @chat_router.get("/{thread_id}", response_model=list[Message])
-async def get_chat_history(thread_id: UUID):
+async def get_chat_history(thread_id: UUID, user: str = Depends(get_current_user)):
     """看这个会话的聊天记录（没聊过 → 404）。"""
     return await chat_service.get_chat_history(thread_id)

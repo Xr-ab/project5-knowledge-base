@@ -1,0 +1,14 @@
+# backend/.dockerignore：构建后端镜像时哪些不打进箱子
+# 不写这个，会把 .venv（几百MB）、outputs 数据库、__pycache__ 全塞进镜像
+
+.venv/
+venv/
+outputs/
+.git/
+.gitignore
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+*.log
+.DS_Store

@@ -1,30 +1,40 @@
+# ===== docker-compose.yml：一条命令拉起 p5 整套 =====
+# 用法：在 project5-ai-knowledge-base/ 目录下
+#   docker compose up --build
+# 后端自动起在 宿主机 8001（容器里 8000），前端起在 宿主机 5173（容器里 80）
+
 services:
   backend:
     build:
-      context: ./backend                       # 后端构建现场 = 仓库里的 backend/ 目录
-    environment:
-      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
-      BOCHA_API_KEY: ${BOCHA_API_KEY}
-      DATA_DIR: /app/outputs   # 容器里 BASE_DIR 变成 /，必须覆盖数据目录！
+      context: ./backend            # 构建上下文 = backend 目录
+      dockerfile: Dockerfile        # 用 backend/Dockerfile（原作者写好的，路径正确）
+    # 端口映射：容器内部 8000 → 宿主机 8001
+    # 为什么用 8001 不用 8000？你这台机器 8000 被系统保留绑不上（之前踩过 10013 坑）
+    # 改宿主机端口时只动左边这个数，容器内 8000 别动（那是 uvicorn 监听的）
     ports:
-      - "8000:8000"
+      - "8001:8000"
+    # 环境变量：从宿主机的 .env 读（你的 DEEPSEEK_API_KEY / BOCHA_API_KEY 都在那）
+    # env_file 把 .env 所有键注入容器，代码里 settings 自动读到
+    env_file:
+      - .env
+    # 卷挂载：把宿主机 ./outputs 挂进容器 /app/outputs
+    # 关键！config.py:52 数据全落这儿（app.db / chroma/ / checkpoints.db）
+    # 不挂卷 → 容器删了，你传的文档索引 + 会话记忆全没
     volumes:
-      - ./outputs:/app/outputs   # 数据持久化（SQLite + Chroma + 上传文档）
-      - ./logs:/logs             # 日志（容器里 LOGS_DIR 变成 /logs）
-      - chroma_cache:/root/.cache/chroma   # embedding 模型缓存
-    restart: on-failure:3
+      - ./outputs:/app/outputs
+    # 健康检查：等 /health 返回 ok 才算"就绪"，避免前端连太早
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   frontend:
     build:
-      context: ./frontend                     # 前端构建现场 = 仓库里的 frontend/ 目录
-    environment:
-      BACKEND_BASE_URL: http://backend:8000   # 服务名互访，不是 localhost！
+      context: ./frontend/react-app   # 构建上下文 = React 前端（你 8/26 合并进来的）
+      dockerfile: Dockerfile          # 多阶段 Dockerfile（node build → nginx serve）
     ports:
-      - "8501:8501"
+      - "5173:80"                     # 对外 5173 → 容器内 Nginx 的 80
     depends_on:
       backend:
-        condition: service_healthy   # 后端健康才启动前端
-    restart: on-failure:3
-
-volumes:
-  chroma_cache:    # 命名卷声明（数据卷不需要声明，宿主目录直接挂）
+        condition: service_healthy    # 等后端健康了再起前端

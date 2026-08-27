@@ -1,0 +1,9 @@
+/* index.css —— 全局基础样式 */
+/* 收尾清理：删掉了 Vite 模板的演示样式（:root 变量、h1/h2、code 等），
+   聊天界面需要的样式全部在 App.css 里，这里只留最基础的全局设置 */
+
+body {
+  margin: 0; /* 去掉浏览器默认的外边距（否则页面四周有白边） */
+  font-family: system-ui, 'Segoe UI', 'Microsoft YaHei', sans-serif; /* 系统字体优先，中文回退微软雅黑 */
+  -webkit-font-smoothing: antialiased; /* 字体渲染更平滑 */
+}

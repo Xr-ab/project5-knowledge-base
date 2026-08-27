@@ -1,0 +1,25 @@
+# .dockerignore：构建镜像时哪些东西不打进箱子
+# 类比：打包行李时把脏衣服（venv/缓存）留在家，别塞进箱子里
+# 不写这个，会把 .venv（几百MB）、outputs 数据库、node_modules 全塞进镜像，又大又慢
+
+# Python 虚拟环境（容器里自己 pip install，不需要宿主的）
+.venv/
+venv/
+
+# 数据目录：数据库/向量库通过卷挂宿主机，不该烤进镜像
+outputs/
+
+# 前端练手项目（p5-frontend 是独立 React，不进后端镜像）
+p5-frontend/
+
+# 版本控制 / 编辑器 / 系统垃圾
+.git/
+.gitignore
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+.DS_Store
+
+# 日志
+logs/

@@ -1,0 +1,146 @@
+/* App.css —— 聊天界面样式 */
+/* 根容器占满整个浏览器窗口 */
+#root,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 最外层容器 .chat-app：占满全屏，竖直排 */
+.chat-app {
+  height: 100vh;           /* vh = 视口高度，100vh 就是整个窗口高 */
+  display: flex;
+  flex-direction: column;  /* 子元素竖着排（列表在上、输入框在下） */
+}
+
+/* 消息列表：吃掉剩余高度，消息多了可滚动 */
+.message-list {
+  flex: 1;                 /* 把剩下的高度全吃掉 */
+  overflow-y: auto;        /* 超出时出滚动条 */
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;                /* 气泡之间留 8px 空隙 */
+}
+
+/* 气泡公共样式：所有消息都有的基础长相 */
+.message {
+  position: relative;      /* 给尾巴 ::after 定位用 */
+  max-width: 70%;          /* 最宽占容器 70%，不会撑满整行 */
+  padding: 10px 14px;
+  border-radius: 24px;     /* 圆角更圆润（微信感） */
+  line-height: 1.5;
+  word-break: break-word;  /* 超长内容自动换行，不溢出 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); /* 阴影加深，更强卡片感 */
+}
+
+/* 用户消息：靠右、蓝底白字 */
+.message--user {
+  align-self: flex-end;    /* 自己在行尾（靠右） */
+  background: #4c8dff;
+  color: #fff;
+  border-bottom-right-radius: 4px; /* 右下角小一点，像「从这发出去的」 */
+}
+/* 用户气泡小尾巴：右侧朝右的三角 */
+.message--user::after {
+  content: "";
+  position: absolute;
+  right: -7px;
+  bottom: 10px;
+  border-width: 6px 0 6px 7px;
+  border-style: solid;
+  border-color: transparent transparent transparent #4c8dff;
+}
+
+/* 助手消息：靠左、浅灰底深字 */
+.message--assistant {
+  align-self: flex-start;  /* 自己在行首（靠左） */
+  background: #f1f1f3;
+  color: #333;
+  border-bottom-left-radius: 4px;
+}
+/* 助手气泡小尾巴：左侧朝左的三角 */
+.message--assistant::after {
+  content: "";
+  position: absolute;
+  left: -7px;
+  bottom: 10px;
+  border-width: 6px 7px 6px 0;
+  border-style: solid;
+  border-color: transparent #f1f1f3 transparent transparent;
+}
+
+/* 思考中气泡：浅一点、无阴影，和正式回复区分开 */
+.message--thinking {
+  background: #fafafa;
+  color: #999;
+  box-shadow: none;
+  border: 1px dashed #ddd;
+}
+
+/* 三点跳动动画：省得像卡死（轮流往上蹦） */
+.message--thinking .dots {
+  display: inline-block;
+  margin-left: 2px;
+}
+.message--thinking .dots i {
+  font-style: normal;
+  animation: blink 1.2s infinite both;
+}
+.message--thinking .dots i:nth-child(2) { animation-delay: 0.2s; }
+.message--thinking .dots i:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.2; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
+}
+
+/* 输入区：固定在底部的输入条 */
+.message-input {
+  display: flex;                  /* 横排：输入框 + 按钮 并排 */
+  gap: 8px;                       /* 两者间距 */
+  padding: 12px 16px;
+  border-top: 1px solid #e5e5e5;  /* 顶部一条浅灰分隔线 */
+  background: #fff;
+}
+
+/* 输入框：吃掉剩余宽度（flex:1） */
+.message-input input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #ddd;
+  border-radius: 20px;            /* 圆角 */
+  font-size: 16px;
+  outline: none;                  /* 去掉点进去时的黑框 */
+}
+
+/* 聚焦（点进去）时边框变蓝 */
+.message-input input:focus {
+  border-color: #4c8dff;
+}
+
+/* 发送按钮 */
+.message-input button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  background: #4c8dff;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;                /* 鼠标移上去变手型 */
+}
+
+/* 悬停（鼠标放在上面）时颜色变深一点，给用户反馈 */
+.message-input button:hover {
+  background: #3a7bf0;
+}
+/* 发送按钮禁用态（AI 回话中）：变灰 + 不可点 */
+.message-input button:disabled {
+  background: #b8c8e8;
+  cursor: not-allowed;  /* 鼠标变成禁止符号 */
+}
+
+/* 输入框禁用态：浅一点 */
+.message-input input:disabled {
+  background: #f5f5f5;
+}
