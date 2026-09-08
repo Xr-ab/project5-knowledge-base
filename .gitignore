@@ -6,6 +6,13 @@
 # 运行产物：SQLite / Chroma / 上传文档 / 日志
 outputs/
 logs/
+# 根目录运行日志（uvicorn 重定向输出）
+.backend_*.log
+.backend_run.log
+.backend_verify.log
+
+# AI 协作缓存
+.remember/
 
 # Python 缓存与虚拟环境
 __pycache__/
