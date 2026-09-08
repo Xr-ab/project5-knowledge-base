@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from app.chat.routes import chat_router          # 聊天路由（模块 5 填充）
 from app.documents.routes import document_router  # 文档路由（模块 4 填充）
+from app.exception_handlers import register_exception_handlers  # 全局异常处理器（模块 A）
 from app.lifespan import lifespan                 # 启动/关闭钩子（建目录、建表）
 from app.middleware import register_middleware    # 中间件注册（CORS）
 from app.security import create_access_token      # JWT 签发（模块 6）
@@ -25,6 +26,7 @@ app = FastAPI(
 )
 
 register_middleware(app)  # 注册中间件（目前只有 CORS）
+register_exception_handlers(app)  # 注册全局异常处理器（AppException 家族 → JSON）
 # 挂路由器：prefix 是 URL 前缀，tags 是 Swagger 文档里的分组名
 app.include_router(thread_router, prefix=f"{version_prefix}/threads", tags=["THREADS"])
 app.include_router(document_router, prefix=f"{version_prefix}/documents", tags=["DOCUMENTS"])

@@ -5,7 +5,7 @@
 """
 import uuid  # UUID 类型注解
 
-from fastapi import HTTPException  # 抛 HTTP 错误（404 等），FastAPI 自动转成响应
+from app.exceptions import NotFoundError  # 业务异常（找不到 → 404）
 from loguru import logger
 from sqlalchemy import select  # 构造查询语句（SELECT ...）
 from sqlalchemy.ext.asyncio import AsyncSession  # 异步会话类型（类型注解用）
@@ -35,7 +35,7 @@ async def get_thread(thread_id: uuid.UUID, session: AsyncSession) -> Thread:
     """查单个会话；不存在 → 404。"""
     thread = await session.get(Thread, thread_id)  # 按主键查（比 select 快且短），查不到返回 None
     if not thread:
-        raise HTTPException(status_code=404, detail="Thread not found")
+        raise NotFoundError("Thread not found")  # 业务异常 → 全局 handler 翻译成 404
     return thread
 
 
