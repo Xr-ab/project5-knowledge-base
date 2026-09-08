@@ -8,7 +8,7 @@ export default defineConfig({
     proxy: {
       // 前端请求 /api/v1/xxx 时，Vite 自动转发到 8000 端口
       '/api/v1': {
-        target: 'http://127.0.0.1:8000',
+        target: 'http://127.0.0.1:8001',
         changeOrigin: true,
       },
     },
