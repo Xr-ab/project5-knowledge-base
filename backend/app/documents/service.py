@@ -6,43 +6,32 @@
 import uuid
 from collections.abc import Sequence
 
-from fastapi import HTTPException, status
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Document
 from app.documents.schemas import DocumentBase
+from app.documents.repository import (
+    get_documents_by_thread,
+    insert_document as repo_insert_document,  # 别名：和本文件的 insert_document 区分开
+    get_document_by_id,
+)
+from app.exceptions import NotFoundError  # 业务异常（找不到 → 404）
 
 
 async def get_documents(thread_id: uuid.UUID, session: AsyncSession) -> Sequence[Document]:
     """列出该会话下的所有文档（按上传时间倒序，最新的在前）。"""
-    stmt = (
-        select(Document)
-        .where(Document.thread_id == thread_id)
-        .order_by(Document.uploaded_at.desc())
-    )
-    result = await session.execute(stmt)
-    return result.scalars().all()
+    return await get_documents_by_thread(thread_id, session)  # 查询语句在 repository
 
 
 async def insert_document(document_data: DocumentBase, session: AsyncSession) -> Document:
     """登记一条文档记录。"""
-    new_document = Document(**document_data.model_dump())  # Pydantic 对象 → dict → 展开成关键字参数
-    session.add(new_document)
-    await session.commit()
-    await session.refresh(new_document)
-    # 参考书漏了上面这行 refresh——uploaded_at 是 server_default，
-    # 数据库填的时间 commit 后不刷新对象上读不到（模块 3 学过的坑，这里复现）。
-    return new_document
+    return await repo_insert_document(document_data, session)  # 建记录的细节在 repository
 
 
 async def delete_document(document_id: uuid.UUID, session: AsyncSession) -> None:
     """删除文档登记记录（不存在 → 404）。"""
-    db_document = await session.get(Document, document_id)
+    db_document = await get_document_by_id(document_id, session)  # 查库交给 repository
     if db_document is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Document with ID {document_id} not found.",
-        )
+        raise NotFoundError(f"Document with ID {document_id} not found.")  # 业务判断留在 service
     await session.delete(db_document)
     await session.commit()
