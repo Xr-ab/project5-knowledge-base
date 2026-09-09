@@ -1,6 +1,12 @@
-"""middleware.py —— 注册中间件（目前只有 CORS）。"""
-from fastapi import FastAPI
+"""middleware.py —— 注册中间件（CORS + 请求日志）。
+
+中间件 = 安检门：每个请求进来/出去都经过这里，与具体路由无关。
+"""
+import time
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
 
 
 def register_middleware(app: FastAPI):
@@ -12,3 +18,12 @@ def register_middleware(app: FastAPI):
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # 请求日志中间件（练习）：每个请求打印 方法 + 路径 + 耗时(ms)
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        start = time.perf_counter()          # 请求进来时记开始时间
+        response = await call_next(request)  # 放行，等路由处理完
+        duration = (time.perf_counter() - start) * 1000
+        logger.info(f"{request.method} {request.url.path} {duration:.0f}ms")
+        return response
