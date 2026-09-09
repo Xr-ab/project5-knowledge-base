@@ -7,35 +7,29 @@ import uuid  # UUID 类型注解
 
 from app.exceptions import NotFoundError  # 业务异常（找不到 → 404）
 from loguru import logger
-from sqlalchemy import select  # 构造查询语句（SELECT ...）
 from sqlalchemy.ext.asyncio import AsyncSession  # 异步会话类型（类型注解用）
 
 from app.db.checkpointer import get_checkpointer  # 聊天记忆存档器（删会话时要一起清）
 from app.db.models import Thread
+from app.threads.repository import create_thread, get_all_threads, get_thread_by_id
 from app.threads.schemas import ThreadUpdate
 
 
 async def create_new_thread(session: AsyncSession) -> Thread:
     """新建会话：标题用模型默认值 "New Chat"。"""
-    thread = Thread()  # 建对象，id/title/created_at 都用模型里的默认值
-    session.add(thread)  # 加入工作区（注意：还没写库！）
-    await session.commit()  # commit 才真正写入数据库（漏了它 = 数据不生效的经典坑）
-    await session.refresh(thread)  # 重新从库里读一遍，拿到数据库填的字段（created_at）
-    return thread
+    return await create_thread(session)  # 建对象的细节在 repository，service 不碰库
 
 
 async def get_user_threads(session: AsyncSession) -> list[Thread]:
     """列出全部会话（v1 单用户，不用按 user 过滤）。"""
-    stmt = select(Thread).order_by(Thread.created_at.desc())  # SELECT ... ORDER BY 最新在前
-    result = await session.execute(stmt)  # 执行查询（异步，等数据库）
-    return list(result.scalars().all())  # .scalars() 取"一行行对象"，.all() 拉全量，转列表
+    return await get_all_threads(session)  # 查询语句在 repository，service 只调用
 
 
 async def get_thread(thread_id: uuid.UUID, session: AsyncSession) -> Thread:
     """查单个会话；不存在 → 404。"""
-    thread = await session.get(Thread, thread_id)  # 按主键查（比 select 快且短），查不到返回 None
+    thread = await get_thread_by_id(thread_id, session)  # 查库交给 repository
     if not thread:
-        raise NotFoundError("Thread not found")  # 业务异常 → 全局 handler 翻译成 404
+        raise NotFoundError("Thread not found")  # 业务判断留在 service
     return thread
 
 
