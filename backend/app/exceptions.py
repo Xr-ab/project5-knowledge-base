@@ -28,3 +28,8 @@ class PermissionDeniedError(AppException):
 
     # TODO: 子类只做一件事——把 status_code 定死为 403
     status_code = 403
+
+class ConflictError(AppException):
+    """资源冲突（如注册重名）。将来翻译成 409。"""
+
+    status_code = 409

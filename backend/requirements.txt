@@ -29,3 +29,4 @@ langchain-core==1.5.5
 httpx==0.28.1             # bocha 搜索工具发请求
 # 模块6 JWT 鉴权
 pyjwt==2.10.1
+bcrypt==5.0.0             # 密码哈希（注册存哈希 / 登录比哈希）

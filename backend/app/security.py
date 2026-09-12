@@ -7,7 +7,7 @@ import datetime
 import jwt  # pip install pyjwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-
+import bcrypt
 from app.config import settings
 
 # HTTPBearer：FastAPI 标准组件，从请求头提取 "Authorization: Bearer <token>"
@@ -36,3 +36,11 @@ def get_current_user(
     except jwt.PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="token 无效或已过期")
     return payload["sub"]  # 验签通过，把用户 id 交给接口用
+
+def hash_password(plain: str) -> str:
+    """密码 → 哈希（存库用这个）。bcrypt 每次自动加盐，结果每次不同但都能验证。"""
+    return bcrypt.hashpw(plain.encode(), bcrypt.gensalt()).decode()
+
+def verify_password(plain: str, hashed: str) -> bool:
+    """验证：把输入密码再哈希，和库里存的哈希比对。"""
+    return bcrypt.checkpw(plain.encode(), hashed.encode())
