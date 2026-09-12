@@ -1,7 +1,7 @@
 """repository.py —— 用户数据访问层。只写数据操作，不做业务判断。"""
 from sqlalchemy import select    # 写查询用
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.models import User   # 注意：这次是 User 不是 Thread
+from app.db.models import User
 
 async def create_user(username: str, password_hash: str, session: AsyncSession) -> User:
     """注册：把用户名 + 哈希后的密码存库。返回建好的 User 对象。"""

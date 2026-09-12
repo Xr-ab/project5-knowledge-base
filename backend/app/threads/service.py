@@ -15,39 +15,39 @@ from app.threads.repository import create_thread, get_all_threads, get_thread_by
 from app.threads.schemas import ThreadUpdate
 
 
-async def create_new_thread(session: AsyncSession) -> Thread:
-    """新建会话：标题用模型默认值 "New Chat"。"""
-    return await create_thread(session)  # 建对象的细节在 repository，service 不碰库
+async def create_new_thread(user_id: uuid.UUID, session: AsyncSession) -> Thread:
+    """新建会话：把当前用户的 id 写入归属。"""
+    return await create_thread(user_id, session)  # 建对象的细节在 repository，service 不碰库
 
 
-async def get_user_threads(session: AsyncSession) -> list[Thread]:
-    """列出全部会话（v1 单用户，不用按 user 过滤）。"""
-    return await get_all_threads(session)  # 查询语句在 repository，service 只调用
+async def get_user_threads(user_id: uuid.UUID, session: AsyncSession) -> list[Thread]:
+    """列出当前用户的全部会话（数据隔离：只给本人）。"""
+    return await get_all_threads(user_id, session)  # 查询语句在 repository，service 只调用
 
 
-async def get_thread(thread_id: uuid.UUID, session: AsyncSession) -> Thread:
-    """查单个会话；不存在 → 404。"""
-    thread = await get_thread_by_id(thread_id, session)  # 查库交给 repository
+async def get_thread(thread_id: uuid.UUID, user_id: uuid.UUID, session: AsyncSession) -> Thread:
+    """查单个会话（带归属）；不存在或不是你的 → 404。"""
+    thread = await get_thread_by_id(thread_id, user_id, session)  # 查库交给 repository，WHERE 含归属
     if not thread:
         raise NotFoundError("Thread not found")  # 业务判断留在 service
     return thread
 
 
-async def update_thread(thread_update: ThreadUpdate, thread_id: uuid.UUID, session: AsyncSession) -> Thread:
+async def update_thread(thread_update: ThreadUpdate, thread_id: uuid.UUID, user_id: uuid.UUID, session: AsyncSession) -> Thread:
     """改标题：先查（404），再改，再提交。"""
-    thread = await get_thread(thread_id, session)  # 复用 get_thread → 查不到自动 404，不用重复写
+    thread = await get_thread(thread_id, user_id, session)  # 复用 get_thread → 查不到自动 404，不用重复写
     thread.title = thread_update.title  # 改字段（改对象即可，不用 add——它已在工作区里）
     await session.commit()  # 提交生效
     await session.refresh(thread)  # 拿最新状态
     return thread
 
 
-async def delete_thread(thread_id: uuid.UUID, session: AsyncSession) -> None:
+async def delete_thread(thread_id: uuid.UUID, user_id: uuid.UUID, session: AsyncSession) -> None:
     """删除会话：先删数据库记录，再清聊天记忆（checkpointer）——两处都要删，否则孤儿记忆残留。
 
     以前只删数据库，checkpoints.db 里该会话的历史还在；删完再拿同 id 问问题会读到旧记忆。
     """
-    thread = await get_thread(thread_id, session)  # 查不到自动 404
+    thread = await get_thread(thread_id, user_id, session)  # 查不到自动 404
     await session.delete(thread)  # 标记删除（和 add 一样，未提交不生效）
     await session.commit()  # 提交生效
 
