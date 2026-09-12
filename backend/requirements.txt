@@ -12,7 +12,8 @@ loguru==0.7.3
 
 # 模块3/4 数据库与向量库
 sqlalchemy==2.0.52
-aiosqlite==0.22.1          # 异步 SQLite 驱动（SQLAlchemy async 必需）
+asyncpg==0.31.0           # 异步 Postgres 驱动（业务库 SQLAlchemy async 连 Postgres 用）
+aiosqlite==0.22.1          # 异步 SQLite 驱动（langgraph 会话记忆仍在用，先留着）
 chromadb==1.5.9            # 自带 embedding（all-MiniLM-L6-v2，ONNX）
 
 # 模块4 文档解析

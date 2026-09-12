@@ -2,7 +2,6 @@
 from collections.abc import AsyncGenerator
 
 from fastapi import Depends
-from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from typing import Annotated
 
@@ -12,16 +11,7 @@ from app.db.models import Base
 
 # 引擎：连接数据库的"总管道"，懒加载——不真正连接，等第一次使用时才建连接
 engine: AsyncEngine = create_async_engine(url=settings.database_uri)
-
-# SQLite 默认不执行外键约束（参考书用 Postgres 没这问题）。
-# 每次连接数据库时手动打开，ondelete="CASCADE" 才能生效。
-# 注意：必须写在 engine 定义之后——装饰器在 import 时就要取 engine.sync_engine。
-@event.listens_for(engine.sync_engine, "connect")
-def _enable_sqlite_fk(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
-
+# 之前 SQLite 的 PRAGMA foreign_keys=ON 已删：Postgres 默认执行外键约束，不需要这个补丁。
 
 # 会话工厂：每次需要会话时，从 engine 的连接池里取一个，包装成 session
 async_session: async_sessionmaker[AsyncSession] = async_sessionmaker(

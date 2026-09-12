@@ -56,13 +56,12 @@ class Settings(BaseSettings):
 
     @property
     def database_uri(self) -> str:
-        """SQLite 连接串（v1 用本地文件，不引数据库服务器）。
+        """Postgres 连接串（开发阶段先写死，值对应 docker-compose 里 postgres 服务）。
 
-        用 property 而不是字段：地址由 data_dir 推导，只有一个真相来源，
-        不会出现手填路径和 data_dir 打架的情况。
-        .as_posix()：Windows 反斜杠路径转成 /，SQLite URL 只认正斜杠。
+        格式：协议+驱动://用户名:密码@地址:端口/库名。
+        注意：密码直接写在代码里只适合本地开发，生产必须挪到 .env。
         """
-        return f"sqlite+aiosqlite:///{(self.data_dir / 'app.db').as_posix()}"
+        return f"postgresql+asyncpg://postgres:p5-secret@localhost:5432/knowledge_base"
     @property
     def chroma_dir(self) -> Path:
         """向量库目录（Chroma 数据落盘位置，在 outputs/ 下）。"""

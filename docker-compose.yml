@@ -4,6 +4,21 @@
 # 后端自动起在 宿主机 8001（容器里 8000），前端起在 宿主机 5173（容器里 80）
 
 services:
+  postgres:
+    image: postgres:16-alpine          # 官方镜像，alpine 版本更小
+    environment:                       # 容器内初始化用的账号/密码/库名
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: p5-secret
+      POSTGRES_DB: knowledge_base
+    ports:
+      - "5432:5432"                    # 宿主机 5432 → 容器 5432（后端连这里）
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # 数据持久化：容器删了库还在
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d knowledge_base"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   backend:
     build:
       context: ./backend            # 构建上下文 = backend 目录
@@ -29,6 +44,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   frontend:
     build:
@@ -39,3 +57,5 @@ services:
     depends_on:
       backend:
         condition: service_healthy    # 等后端健康了再起前端
+volumes:
+  pgdata:

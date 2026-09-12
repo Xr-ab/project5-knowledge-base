@@ -29,11 +29,25 @@ class Thread(Base):
 
     # 主键：UUID 类型，不传值时 Python 自动生成（default 是 Python 侧干活）
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    # 归属人：外键指向 users 表。数据隔离靠它——每个会话属于一个用户；
+    # 用户删了，他的会话跟着删（CASCADE）。
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        index=True,  # 按用户查会话是高频操作，建索引提速
+    )
     # 标题：最长 100 字符，不传值时默认 "New Chat"
     title: Mapped[str] = mapped_column(String(100), default="New Chat")
     # 创建时间：server_default 是数据库侧干活——INSERT 时数据库自己填当前时间
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
+class User(Base):
+    """用户表——"谁是用户"的登记册。"""
+    __tablename__ = "users"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    username: Mapped[str] = mapped_column(String(50), unique=True)   # 唯一：不能重名
+    password_hash: Mapped[str] = mapped_column(String(255))          # 存哈希，不存明文
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 class Document(Base):
     """上传的文档表：每份文档挂在一个会话下。"""
