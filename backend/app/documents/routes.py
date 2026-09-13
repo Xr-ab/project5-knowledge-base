@@ -3,7 +3,7 @@ import shutil
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from loguru import logger
 
 from app.config import settings
@@ -16,6 +16,7 @@ from app.documents.schemas import (
     DocumentPublic,
     DocumentUploadResponse,
 )
+from app.security import get_current_user  # 登录依赖：没带合法 token 一律 401
 
 document_router = APIRouter()
 
@@ -23,9 +24,9 @@ MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 上传上限 10MB（规范 §7.4；可调
 
 
 @document_router.get("/{thread_id}", response_model=list[DocumentPublic])
-async def get_documents(thread_id: uuid.UUID, session: SessionDep):
-    """列出该会话下的所有文档。"""
-    return await document_service.get_documents(thread_id, session)
+async def get_documents(thread_id: uuid.UUID, session: SessionDep, current_user: str = Depends(get_current_user)):
+    """列出该会话下的所有文档（只允许列自己的会话）。"""
+    return await document_service.get_documents(thread_id, uuid.UUID(current_user), session)
 
 
 @document_router.post(
@@ -33,8 +34,11 @@ async def get_documents(thread_id: uuid.UUID, session: SessionDep):
     response_model=DocumentUploadResponse,
     status_code=status.HTTP_201_CREATED,
 )
-async def upload_document(thread_id: uuid.UUID, file: UploadFile, session: SessionDep):
+async def upload_document(thread_id: uuid.UUID, file: UploadFile, session: SessionDep, current_user: str = Depends(get_current_user)):
     """上传文档：临时落盘 → 登记数据库 → 索引进向量库；任何一步失败都回滚。"""
+    # ⓪ 先验归属：权限都没有就不做任何活（不读文件、不碰磁盘）
+    await document_service.ensure_thread_owned(thread_id, uuid.UUID(current_user), session)
+
     # ① 校验扩展名（早失败：不合法直接拒，不碰磁盘不做脏活）
     if file.filename is None or Path(file.filename).suffix.lower() not in SUPPORTED_EXTENSIONS:
         raise HTTPException(
@@ -100,8 +104,8 @@ async def upload_document(thread_id: uuid.UUID, file: UploadFile, session: Sessi
 
 
 @document_router.delete("/{document_id}", response_model=DocumentDeleteResponse)
-async def delete_document(document_id: uuid.UUID, session: SessionDep):
-    """删除文档：先清向量库切片，再删数据库记录。"""
+async def delete_document(document_id: uuid.UUID, session: SessionDep, current_user: str = Depends(get_current_user)):
+    """删除文档：先清向量库切片，再删数据库记录（只允许删自己会话的）。"""
     await delete_document_chunks(document_id)  # Chroma 按 document_id 清片（查不到就空操作）
-    await document_service.delete_document(document_id, session)  # 数据库记录（不存在 404）
+    await document_service.delete_document(document_id, uuid.UUID(current_user), session)  # 归属校验在 service，不存在/不是你的 404
     return DocumentDeleteResponse(message=f"成功删除文档 {document_id}（含向量库切片）")
