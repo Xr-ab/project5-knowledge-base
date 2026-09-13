@@ -47,3 +47,12 @@ async def delete_document(document_id: uuid.UUID, user_id: uuid.UUID, session: A
     await ensure_thread_owned(db_document.thread_id, user_id, session)  # 文档没有 user_id，绕会话验归属
     await session.delete(db_document)
     await session.commit()
+
+async def update_status(document_id: uuid.UUID, status: str, session: AsyncSession, error_message: str | None = None) -> None:
+    """后台任务改状态：processing → ready / failed。"""
+    db_document = await get_document_by_id(document_id, session)
+    if db_document is None:
+        return  # 文档已被删 → 静默跳过。为什么不抛 404？见下
+    db_document.status = status
+    db_document.error_message = error_message
+    await session.commit()

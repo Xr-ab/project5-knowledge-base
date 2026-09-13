@@ -21,7 +21,7 @@ class DocumentPublic(BaseModel):
     file_name: str
     thread_id: uuid.UUID
     uploaded_at: datetime
-
+    status: str
     model_config = {"from_attributes": True}  # 允许从 ORM 对象构造（FastAPI 转换用）
 
 

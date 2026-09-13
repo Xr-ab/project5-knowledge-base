@@ -60,3 +60,7 @@ class Document(Base):
         index=True,  # 给这列建索引：按会话查文档是高频操作，索引提速
     )
     uploaded_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    # 处理状态机：processing（处理中）→ ready（就绪）或 failed（失败）
+    status: Mapped[str] = mapped_column(String(20), default="processing")
+    # 失败原因（成功时为 NULL）。为什么可为空？→ 成功的文档没有失败原因
+    error_message: Mapped[str | None] = mapped_column(String(500), nullable=True)
