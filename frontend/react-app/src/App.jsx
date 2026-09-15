@@ -17,25 +17,45 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)  // AI 回话中 = true，禁用发送
   const [token, setToken] = useState('')             // JWT：登录拿到的 access_token
   const [isUploading, setIsUploading] = useState(false) // 上传中文 = true，禁用输入条
+  // 登录表单的状态（未登录时显示登录卡片，登录成功后进入聊天界面）
+  const [loginUsername, setLoginUsername] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [loginError, setLoginError] = useState('')
 
-  // 登录小助手：专门打 auth/login 拿 token，记进 state 并返回。
-  // 首次发消息用它，token 过期（401）也用它重新拿 —— 同一段逻辑复用。
-  async function doLogin() {
+  // 登录小助手：打 auth/login 换 token，记进 state 并返回。
+  // 账号密码由登录表单提供（后端 JWT 校验，不再有免密假登录）。
+  async function doLogin(username, password) {
     const loginRes = await fetch(`${BACKEND_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'xr' }),
+      body: JSON.stringify({ username, password }),
     })
-    if (!loginRes.ok) throw new Error('登录失败')
+    if (!loginRes.ok) throw new Error('登录失败，请检查用户名/密码')
     const loginData = await loginRes.json()
-    setToken(loginData.access_token)  // 记进 state，下次不用再登
+    setToken(loginData.access_token)  // 记进 state，后续所有请求都带它
     return loginData.access_token
   }
 
-  // 拉会话列表（侧边栏用）：GET /threads，不需要 token
-  async function fetchThreads() {
+  // 点登录按钮：先登录拿 token，成功后再拉会话列表
+  async function handleLogin(e) {
+    e.preventDefault()
+    setLoginError('')
     try {
-      const res = await fetch(`${BACKEND_URL}/threads`)
+      await doLogin(loginUsername, loginPassword)
+      setLoginPassword('')   // 登录成功清空密码框（避免下次误用旧密码）
+      fetchThreads()         // 登录成功后才能拉到属于该用户的会话
+    } catch (err) {
+      setLoginError(err.message)
+    }
+  }
+
+  // 拉会话列表（侧边栏用）：GET /threads，带 token（后端已做会话隔离，必须带）
+  async function fetchThreads() {
+    if (!token) return   // 没登录不请求（请求了也是 401）
+    try {
+      const res = await fetch(`${BACKEND_URL}/threads`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       if (!res.ok) return
       setThreads(await res.json())
     } catch {
@@ -43,20 +63,17 @@ function App() {
     }
   }
 
-  // 组件挂载时拉一次会话列表
-  useEffect(() => { fetchThreads() }, [])
+  // token 变化（登录成功）时拉一次会话列表
+  useEffect(() => { if (token) fetchThreads() }, [token])
 
   // 切到某个会话：把它的历史消息上屏。
   // ⚠️ 后端存的 role 是 human/ai，前端气泡样式要 user/assistant，这里做映射。
   async function handleSelectThread(id) {
     setThreadId(id)
     setAiText(''); setAiThinking('')
-    let tk = token
-    if (!tk) tk = await doLogin()        // 读历史要 token，没有先登
-    const res = await fetch(`${BACKEND_URL}/chat/${id}`, {
-      headers: { Authorization: `Bearer ${tk}` },
-    })
-    if (!res.ok) return
+    if (!token) return   // 没登录不请求（登录态由 App 顶层把关，这里防御一下）
+    const res = await fetch(`${BACKEND_URL}/chat/${id}`, { headers: { Authorization: `Bearer ${token}` } }) 
+    if (!res.ok) { setMessages([]); return } // 404=该会话没聊过：清空列表，别残留上一个会话的历史
     const data = await res.json()
     setMessages(
       data.map((m, i) => ({
@@ -82,14 +99,18 @@ function App() {
       // 1. 用户消息加进列表
       setMessages((prev) => [...prev, { id: Date.now(), role: 'user', text }])
 
-      // 2. 确保有 token（没有就登录，懒加载）
+      // 2. token 由登录表单提供（登录态是顶层把关的，这里防御一下）
       let currentToken = token
-      if (!currentToken) currentToken = await doLogin()
+      if (!currentToken) throw new Error('未登录')
 
-      // 3. 首次发消息：申请会话 id，并刷新侧边栏
+      // 3. 首次发消息：申请会话 id（带 token，后端按用户隔离），并刷新侧边栏
       let tid = threadId
       if (!tid) {
-        const res = await fetch(`${BACKEND_URL}/threads`, { method: 'POST' })
+        const res = await fetch(`${BACKEND_URL}/threads`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${currentToken}` },
+        })
+        if (!res.ok) throw new Error(`新建会话失败 ${res.status}`)
         const data = await res.json()
         tid = data.id
         setThreadId(tid)
@@ -109,10 +130,15 @@ function App() {
       }
 
       let res = await postChat(currentToken)
-      // token 过期（401）→ 自动重新登录拿新 token，重试一次（用户无感）
+      // token 过期（401）：密码在登录表单里无法自动重登，清掉登录态回登录页（用户重新登录）
       if (res.status === 401) {
-        currentToken = await doLogin()
-        res = await postChat(currentToken)
+        setToken('')
+        setMessages((prev) => [...prev, {
+          id: Date.now(),
+          role: 'system',
+          text: '⚠️ 登录已过期，请重新登录',
+        }])
+        throw new Error('登录已过期')
       }
       if (!res.ok) throw new Error(`聊天接口返回 ${res.status}`)
 
@@ -164,10 +190,14 @@ function App() {
     if (!file) return
     setIsUploading(true)
     try {
-      // 懒加载 thread：上传也要会话 id，没建过就先建一个
+      if (!token) throw new Error('未登录')
+      // 懒加载 thread：上传也要会话 id，没建过就先建一个（带 token）
       let tid = threadId
       if (!tid) {
-        const res = await fetch(`${BACKEND_URL}/threads`, { method: 'POST' })
+        const res = await fetch(`${BACKEND_URL}/threads`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        })
         const data = await res.json()
         tid = data.id
         setThreadId(tid)
@@ -181,11 +211,13 @@ function App() {
       // ⚠️ 发 FormData 时千万别手动设 Content-Type！
       // 浏览器会自动加 'multipart/form-data; boundary=xxx'，boundary 是分隔符。
       // 手动设反而会丢掉 boundary，后端解析不出文件 → 400/422。
-      // 后端 upload 接口不要求 Bearer token（只有 chat 要），所以这里不带 Authorization。
+      // 只手动加 Authorization（上传接口同样受 JWT 保护）。
       const res = await fetch(`${BACKEND_URL}/documents/upload/${tid}`, {
         method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       })
+      if (res.status === 401) { setToken(''); throw new Error('登录已过期，请重新登录') }
       if (!res.ok) throw new Error(`上传失败 ${res.status}`)
 
       const data = await res.json()
@@ -205,6 +237,34 @@ function App() {
     }
   }
 
+  // 未登录：渲染登录卡片（账号密码登录，成功后 setToken 触发进入主界面）
+  if (!token) {
+    return (
+      <div className="login-screen">
+        <form className="login-form" onSubmit={handleLogin}>
+          <h2>登录项目5知识库</h2>
+          <input
+            type="text"
+            value={loginUsername}
+            onChange={(e) => setLoginUsername(e.target.value)}
+            placeholder="用户名"
+            autoComplete="username"
+          />
+          <input
+            type="password"
+            value={loginPassword}
+            onChange={(e) => setLoginPassword(e.target.value)}
+            placeholder="密码"
+            autoComplete="current-password"
+          />
+          {loginError && <p className="login-error">{loginError}</p>}
+          <button type="submit">登录</button>
+        </form>
+      </div>
+    )
+  }
+
+  // 已登录：正常聊天界面
   return (
     <div className="chat-app">
       {/* 左侧会话列表（侧边栏） */}
