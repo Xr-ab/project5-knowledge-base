@@ -35,6 +35,9 @@ services:
     # 卷挂载：把宿主机 ./outputs 挂进容器 /app/outputs
     # 关键！config.py:52 数据全落这儿（app.db / chroma/ / checkpoints.db）
     # 不挂卷 → 容器删了，你传的文档索引 + 会话记忆全没
+    environment:
+      DATA_DIR: /app/outputs # 覆盖默认：容器里数据必须写到挂载卷
+      DATABASE_HOST: postgres # 覆盖默认：容器里数据库地址用 compose 服务名，不是 localhost
     volumes:
       - ./outputs:/app/outputs
     # 健康检查：等 /health 返回 ok 才算"就绪"，避免前端连太早

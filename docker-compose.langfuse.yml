@@ -1,0 +1,50 @@
+# Langfuse 自托管 v2（技术雷达 Demo 用，最简：只需要 langfuse + postgres）
+# 用法: docker compose -f docker-compose.langfuse.yml up -d
+# 面板: http://localhost:8080  （headless 初始化自动建好 org/project，无需手动注册）
+# 注意端口避开 project5 的 postgres(5432)，Langfuse 的库走 5433
+# 注意 postgres 服务名避开 project5 的 postgres——两个 compose 同名会互相重建容器！
+services:
+  langfuse:
+    image: langfuse/langfuse:2
+    ports:
+      - "8080:3000"
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+    environment:
+      # 数据库（连的是本 compose 自己的 postgres，库名 langfuse）
+      DATABASE_URL: postgresql://postgres:postgres@langfuse-db:5432/langfuse
+      # 三个密钥：本地 Demo 固定值
+      # ENCRYPTION_KEY 必须 64 位 hex（32 字节），用 openssl rand -hex 32 生成
+      ENCRYPTION_KEY: 8a24d91750c5fecbbd11269cc035526bd7d0461c4727b337ccbd4da7ef08dc44
+      SALT: langfuse-demo-salt
+      NEXTAUTH_SECRET: langfuse-demo-secret
+      NEXTAUTH_URL: http://localhost:8080
+      # 允许注册（本地 Demo 需要）
+      NEXT_PUBLIC_SIGN_UP_DISABLED: "false"
+      # 自动初始化项目（免注册）：启动时若没有该 org 就自动建，并固定 API key
+      LANGFUSE_INIT_ORG_ID: demo-org
+      LANGFUSE_INIT_ORG_NAME: Demo Org
+      LANGFUSE_INIT_PROJECT_ID: demo-project
+      LANGFUSE_INIT_PROJECT_NAME: Demo Project
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: pk-lf-0123456789abcdef0123456789abcdef
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: sk-lf-abcdef0123456789abcdef01234567
+
+  langfuse-db:
+    image: postgres:16-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: langfuse
+    volumes:
+      - langfuse_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d langfuse"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  langfuse_pgdata:

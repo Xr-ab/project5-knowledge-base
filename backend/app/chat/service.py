@@ -5,11 +5,25 @@ from uuid import UUID
 from fastapi import HTTPException
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
+from langfuse import Langfuse
 
+from app.config import settings
 from app.db.checkpointer import get_checkpointer
 
+from .langfuse_handler import LangfuseCallbackHandler
 from .langgraph_agent import build_retrieval_graph
 from .schemas import Message, PromptInput
+
+# Langfuse 上报器（技术雷达）：模块级单例，把 Agent 每次运行的 trace 发到本地面板。
+# key + 面板地址来自 config.py 单一配置源。
+# 面板是 langfuse/langfuse:2 镜像（只认经典 JSON 协议），所以 SDK 锁 2.55.0，
+# 且官方 LangChain 集成只兼容 v0——这里用自写的轻量回调（见 langfuse_handler.py）。
+langfuse_client = Langfuse(
+    public_key=settings.langfuse_public_key,
+    secret_key=settings.langfuse_secret_key,
+    host=settings.langfuse_host,
+)
+langfuse_handler = LangfuseCallbackHandler(langfuse_client)
 
 
 async def chat_stream(thread_id: UUID, prompt_input: PromptInput) -> AsyncIterator:
@@ -19,16 +33,20 @@ async def chat_stream(thread_id: UUID, prompt_input: PromptInput) -> AsyncIterat
     async with 的记忆连接靠 yield 保持存活，覆盖整个流式输出过程。
     """
     async with get_checkpointer() as checkpointer:  # 打开记忆存档器（退出自动关连接）
-        graph = build_retrieval_graph(checkpointer)  # 拼图：模型 + 工具 + 提示词 + 记忆
+        graph = build_retrieval_graph(checkpointer, callbacks=[langfuse_handler])  # 拼图：模型 + 工具 + 提示词 + 记忆
         config = RunnableConfig(
-            configurable={"thread_id": str(thread_id), "checkpoint_ns": ""}  # checkpoint_ns 新版必填
+            configurable={"thread_id": str(thread_id), "checkpoint_ns": ""},  # checkpoint_ns 新版必填
+            callbacks=[langfuse_handler],  # 每次对话挂上 Langfuse 上报器 → 面板生成 trace
         )
-        async for chunk in graph.astream(
-            input={"messages": [HumanMessage(content=prompt_input.prompt)]},
-            config=config,
-            stream_mode=["updates", "messages"],  # 两种流：节点动作 + 模型 token
-        ):
-            yield chunk  # 转手给上层（ChatStreamResponse 负责翻译成 NDJSON）
+        try:
+            async for chunk in graph.astream(
+                input={"messages": [HumanMessage(content=prompt_input.prompt)]},
+                config=config,
+                stream_mode=["updates", "messages"],  # 两种流：节点动作 + 模型 token
+            ):
+                yield chunk  # 转手给上层（ChatStreamResponse 负责翻译成 NDJSON）
+        finally:
+            langfuse_client.flush()  # 流结束/中断都把积压的 trace 批量推给面板
 
 
 async def get_chat_history(thread_id: UUID) -> list[Message]:

@@ -4,6 +4,7 @@
 代码里不出现第二处硬编码的配置值。
 """
 import logging
+import os  # 读环境变量（容器里用 DATA_DIR/PROJECT_ROOT 覆盖默认路径）
 from pathlib import Path  # 路径对象：跨平台，比字符串拼接安全
 
 from loguru import logger  # 第三方日志库：好看 + 自动轮转压缩
@@ -13,11 +14,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # BaseSettings: 配置类的父类（自动读环境变量/.env）；
 # SettingsConfigDict: 行为配置（从哪个文件读等）
 
-# 项目根目录：config.py 在 backend/app/ 下，往上三级 = 项目根
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# 项目根目录：默认按源码路径向上推 3 层（裸机时 = 项目根）
+# 但容器里源码层级是 /app/app/config.py（向上3层=/），必须靠环境变量纠正
+PROJECT_ROOT = Path(os.environ.get("PROJECT_ROOT", str(Path(__file__).resolve().parent.parent.parent)))
+# 数据目录：容器里要落在 /app/outputs（compose 挂载卷这里），裸机默认项目根/outputs
+DATA_DIR = Path(os.environ.get("DATA_DIR", PROJECT_ROOT / "outputs"))
 
 # 日志目录：根目录/logs，不存在就先建（启动前日志就绪）
-LOGS_DIR = BASE_DIR / "logs"
+LOGS_DIR = PROJECT_ROOT / "logs"
 if not LOGS_DIR.exists():
     LOGS_DIR.mkdir()
 
@@ -49,10 +53,16 @@ class Settings(BaseSettings):
     model_base_url: str | None = "https://api.deepseek.com/v1"  # DeepSeek 的 API 地址
     embeddings_model_name: str = "BAAI/bge-small-zh-v1.5"  # 本地向量模型（模块 4 用，无需 key）
     bocha_api_key: str                                    # 博查搜索 Key（必填，模块 5 用）
-    data_dir: Path = BASE_DIR / "outputs"                 # 数据落盘目录（数据库/向量库都在这）
-    jwt_secret: str = "dev-secret-key-change-me"          # JWT 签名密钥（先给个开发用默认值，生产必须换）
+    # Langfuse 可观测性（技术雷达 Demo）：本地面板 http://localhost:8080
+    # key 由 docker-compose.langfuse.yml 的 LANGFUSE_INIT_* 自动初始化，与 compose 保持一致
+    langfuse_public_key: str = "pk-lf-0123456789abcdef0123456789abcdef"
+    langfuse_secret_key: str = "sk-lf-abcdef0123456789abcdef01234567"
+    langfuse_host: str = "http://localhost:8080"          # 本地自托管面板地址
+    data_dir: Path = DATA_DIR                             # 数据落盘目录（数据库/向量库都在这）
+    jwt_secret: str = "dev-secret-key-change-me"          # JWT 签名密钥（先给个开发用默认值，生产必须换）   
+    database_host: str = "localhost"                      # 数据库地址：裸机默认本机；容器里由 compose 注入 postgres    
     # 从项目根目录 .env 读值；extra="allow" 容忍文件里多余键
-    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="allow")
+    model_config = SettingsConfigDict(env_file=PROJECT_ROOT / ".env", extra="allow")
 
     @property
     def database_uri(self) -> str:
@@ -61,7 +71,7 @@ class Settings(BaseSettings):
         格式：协议+驱动://用户名:密码@地址:端口/库名。
         注意：密码直接写在代码里只适合本地开发，生产必须挪到 .env。
         """
-        return f"postgresql+asyncpg://postgres:p5-secret@localhost:5432/knowledge_base"
+        return f"postgresql+asyncpg://postgres:p5-secret@{self.database_host}:5432/knowledge_base"
     @property
     def chroma_dir(self) -> Path:
         """向量库目录（Chroma 数据落盘位置，在 outputs/ 下）。"""
