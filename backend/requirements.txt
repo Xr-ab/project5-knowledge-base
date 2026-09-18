@@ -28,9 +28,10 @@ langchain-openai==1.5.1
 langchain-core==1.5.5
 httpx==0.28.1             # bocha 搜索工具发请求
 # 技术雷达：LLM 可观测性（Langfuse 自托管 Demo）
-# 锁 4.x：面板升级到 langfuse v3 服务器（支持 OTLP），
-# 4.x SDK 的 CallbackHandler 原生兼容 LangChain v1（项目用 langchain 1.x）
-langfuse==4.15.2
+# 锁 2.55.0：面板是 langfuse/langfuse:2（见 docker-compose.langfuse.yml），只认经典 JSON 协议
+# 4.x SDK 走 OTLP 协议，v2 服务器拒绝（404）；且 4.x 没有 Langfuse().trace() 方法，
+# 会与 chat/langfuse_handler.py 的自写回调不兼容——必须锁 2.x
+langfuse==2.55.0
 # 模块6 JWT 鉴权
 pyjwt==2.10.1
 bcrypt==5.0.0             # 密码哈希（注册存哈希 / 登录比哈希）

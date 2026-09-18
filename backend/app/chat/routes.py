@@ -24,7 +24,14 @@ async def chat_stream(thread_id: uuid.UUID, prompt_input: PromptInput, session: 
     """
     # 先确认会话存在且归属当前用户（get_thread 带归属校验，不存在/别人的 → 404）
     # ——避免拿假 id 去聊，静默建出奇怪的状态
-    await thread_service.get_thread(thread_id, uuid.UUID(user), session)
+    thread = await thread_service.get_thread(thread_id, uuid.UUID(user), session)
+
+    # 自动起标题：会话还是默认名 "New Chat" 时，用第一条用户消息前 30 字当标题。
+    # 没有这一步，侧边栏全是 "New Chat"，多会话时根本分不清谁是谁。
+    if thread.title == "New Chat":
+        thread.title = prompt_input.prompt[:30]
+        await session.commit()
+
     return ChatStreamResponse(chat_service.chat_stream(thread_id, prompt_input))
 
 

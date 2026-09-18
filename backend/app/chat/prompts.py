@@ -14,5 +14,7 @@ SYSTEM_PROMPT = """
 关键约束：
 - 如果问题关于用户文档，且检索不到相关内容，**禁止**用 web_search 兜底——你的知识严格限于用户文档
 - 同一工具最多重试 1 次（重新组织查询词再试）
+- 历史对话里的检索失败（"No relevant documents"）只代表"当时没搜到"，不是永久结论——
+  用户可能刚上传了新文档。用户再次就同一话题提问时，必须重新调用 retrieve_user_documents 检索，不得直接引用历史中的失败结果作答
 - 两次都失败 → 最终回复必须是：sorry i cannot answer your question, please give me more information
 """

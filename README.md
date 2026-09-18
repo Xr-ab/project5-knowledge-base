@@ -99,11 +99,36 @@ docker compose -f docker-compose.langfuse.yml up -d   # 面板 http://localhost:
 | 前端构建失败 `react-markdown` 解析错误 | package.json 漏声明依赖 | 补装 `react-markdown` + `rehype-highlight` |
 | Langfuse SDK 4.x 上报 404 | 新 SDK 走 OTLP，v2 服务器不认 | 降级 SDK 2.55.0 + 自写回调 handler |
 
-## 八、后续优化（W4 加分项）
+## 八、RAG 评估（工程化）
 
-- RAG 评估：测试集 / Recall@k / MRR / LLM-as-Judge
-- 检索优化：Hybrid Search（向量+关键词）+ Rerank
-- 用户反馈闭环：轻量 👍/👎 标注
+评估体系在 `backend/eval/`，两套指标 + 一套测试集，量化回答质量：
+
+```
+backend/eval/
+├── test_set.json         测试集 10 问：含陷阱题 / 无答案题 / 跨片段题
+├── retrieval_eval.py     检索评估：Recall@k / MRR
+└── generation_eval.py    生成评估：LLM-as-Judge（正确性 / 忠实度）
+```
+
+**当前基线（测试文档 bluewhale42_full.txt，k=3）：**
+
+| 指标 | 值 | 说明 |
+|---|---|---|
+| Recall@3 | 0.90 | 无答案题正确"不命中"，其余 9/9 命中 |
+| MRR | 0.70 | 4 题正确答案排 rank=2 → 排序有优化空间（Rerank） |
+| 平均正确性 | 5.0 / 5 | 回答与期望答案一致 |
+| 平均忠实度 | 4.7 / 5 | 无幻觉；#3 的 2 分经抽查为 Judge 误判 |
+
+**评估中发现的问题（也是后续方向）：**
+- LLM-as-Judge 会误判 → 打分后需人工抽查校准（评估工程通用坑）
+- MRR 0.70 → 向量检索排序不足，下一步上 Rerank（cross-encoder 精排，见 backend/rerank_demo.py）
+
+## 九、后续优化
+
+- ✅ RAG 评估：测试集 / Recall@k / MRR / LLM-as-Judge（已完成，2026-09）
+- ⬜ 检索优化：Hybrid Search（向量+关键词）+ Rerank 精排 → 冲 MRR
+- ⬜ 扩大测试集：多主题文档 + 每文档 20+ 问，覆盖更多检索场景
+- ⬜ 用户反馈闭环：轻量 👍/👎 标注（复用进 project6）
 
 ---
 

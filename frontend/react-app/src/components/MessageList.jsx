@@ -15,6 +15,15 @@ function MessageList({ messages, aiText, aiThinking }) {
 
   return (
     <div className="message-list">
+      {/* 一条都没有（且没有正在生成的临时气泡）→ 空状态欢迎语，主区不至于一片白 */}
+      {messages.length === 0 && !aiText && !aiThinking && (
+        <div className="empty-state">
+          <h2>项目5 · AI 知识库</h2>
+          <p>上传文档进知识库，再向它提问。</p>
+          <p className="empty-state-hint">试试："根据知识库总结部署方案"，或点左侧「＋ 新建会话」开新话题。</p>
+        </div>
+      )}
+
       {/* 已完成的正式消息 */}
       {messages.map((msg) => (
         <div key={msg.id} className={`message message--${msg.role}`}>

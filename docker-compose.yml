@@ -38,6 +38,7 @@ services:
     environment:
       DATA_DIR: /app/outputs # 覆盖默认：容器里数据必须写到挂载卷
       DATABASE_HOST: postgres # 覆盖默认：容器里数据库地址用 compose 服务名，不是 localhost
+      LANGFUSE_HOST: http://langfuse:3000 # 覆盖默认：容器里面板地址用 compose 服务名（localhost 指向容器自己）
     volumes:
       - ./outputs:/app/outputs
     # 健康检查：等 /health 返回 ok 才算"就绪"，避免前端连太早

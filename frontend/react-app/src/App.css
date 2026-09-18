@@ -195,8 +195,18 @@ body {
   flex-direction: column;
   gap: 4px;
 }
-/* 单条会话：左对齐、超长省略号 */
+/* 单条会话：容器 = 主按钮（左对齐、超长省略号）+ 删除按钮（悬停才显示） */
 .thread-item {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+}
+.thread-item:hover { background: #eef1f6; }
+.thread-item.active { background: #dbe7ff; }  /* 当前会话高亮 */
+/* 主按钮：继承原单按钮的样式（文字/省略号/点击态） */
+.thread-item-main {
+  flex: 1;
+  min-width: 0;              /* 让省略号生效的关键：不写它 flex 子项拒绝收缩 */
   text-align: left;
   padding: 10px 12px;
   border: none;
@@ -209,9 +219,37 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;  /* 标题太长显示... */
 }
-.thread-item:hover { background: #eef1f6; }
-.thread-item.active { background: #dbe7ff; color: #1f5fd0; font-weight: 600; }  /* 当前会话高亮 */
+.thread-item.active .thread-item-main { color: #1f5fd0; font-weight: 600; }
+/* 删除按钮：平时淡入淡出，悬停显示 ×，红色悬停感 */
+.thread-delete {
+  flex: none;
+  margin-right: 6px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #999;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;               /* 默认隐藏：列表清爽，悬停条目才露出 */
+}
+.thread-item:hover .thread-delete { opacity: 1; }
+.thread-delete:hover { background: #ffe3e3; color: #d64545; }
 .thread-empty { padding: 16px 12px; color: #999; font-size: 13px; }
+
+/* 空状态欢迎语：主区一条消息都没有时居中显示，避免一片白 */
+.empty-state {
+  margin: auto;            /* 在 .message-list 里垂直+水平居中 */
+  text-align: center;
+  color: #999;
+  padding: 24px;
+  max-width: 420px;
+}
+.empty-state h2 { margin: 0 0 8px; color: #555; font-size: 20px; }
+.empty-state p { margin: 0 0 6px; font-size: 14px; }
+.empty-state .empty-state-hint { font-size: 13px; color: #bbb; }
 
 /* 输入框禁用态：浅一点 */
 .message-input input:disabled {

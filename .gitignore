@@ -14,6 +14,9 @@ logs/
 # AI 协作缓存
 .remember/
 
+# 临时调试产物（下划线前缀）
+_tmp_*
+
 # Python 缓存与虚拟环境
 __pycache__/
 *.pyc

@@ -1,5 +1,5 @@
 // App.jsx —— 应用最顶层组件：管数据 + 调后端（流式版 + 会话列表 + token 自动续期）
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'  // 必须显式 import，Vite 才会把 App.css 打 bundle
 import MessageList from './components/MessageList'
 import MessageInput from './components/MessageInput'
@@ -15,7 +15,10 @@ function App() {
   const [aiText, setAiText] = useState('')       // 正在生成的 AI 回复（逐字变长）
   const [aiThinking, setAiThinking] = useState('') // 还没收到字时的提示（思考中/查资料）
   const [isLoading, setIsLoading] = useState(false)  // AI 回话中 = true，禁用发送
-  const [token, setToken] = useState('')             // JWT：登录拿到的 access_token
+  // JWT：登录拿到的 access_token。初始值从 localStorage 读 → 刷新页面不掉登录态
+  const [token, setToken] = useState(() => localStorage.getItem('token') || '')
+  const streamAbortRef = useRef(null)  // 正在跑的流式请求（切会话/新建时要取消它，防串台）
+  const selectSeqRef = useRef(0)       // 会话点击序号：快速连点时，只让"最后一次点击"的拉取结果上屏
   const [isUploading, setIsUploading] = useState(false) // 上传中文 = true，禁用输入条
   // 登录表单的状态（未登录时显示登录卡片，登录成功后进入聊天界面）
   const [loginUsername, setLoginUsername] = useState('')
@@ -33,6 +36,7 @@ function App() {
     if (!loginRes.ok) throw new Error('登录失败，请检查用户名/密码')
     const loginData = await loginRes.json()
     setToken(loginData.access_token)  // 记进 state，后续所有请求都带它
+    localStorage.setItem('token', loginData.access_token)  // 存本地 → 刷新页面不掉登录态
     return loginData.access_token
   }
 
@@ -69,10 +73,13 @@ function App() {
   // 切到某个会话：把它的历史消息上屏。
   // ⚠️ 后端存的 role 是 human/ai，前端气泡样式要 user/assistant，这里做映射。
   async function handleSelectThread(id) {
+    streamAbortRef.current?.abort()   // 先掐断正在跑的流式请求，防止内容串到别的会话
+    const seq = ++selectSeqRef.current  // 记本次点击序号：快速连点时旧的拉取结果作废
     setThreadId(id)
     setAiText(''); setAiThinking('')
     if (!token) return   // 没登录不请求（登录态由 App 顶层把关，这里防御一下）
-    const res = await fetch(`${BACKEND_URL}/chat/${id}`, { headers: { Authorization: `Bearer ${token}` } }) 
+    const res = await fetch(`${BACKEND_URL}/chat/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+    if (seq !== selectSeqRef.current) return  // 期间又点了别的会话 → 这次结果丢弃，别覆盖新会话
     if (!res.ok) { setMessages([]); return } // 404=该会话没聊过：清空列表，别残留上一个会话的历史
     const data = await res.json()
     setMessages(
@@ -86,6 +93,7 @@ function App() {
 
   // 新建会话：清空当前会话，下次发消息会建一个新的
   function handleNewThread() {
+    streamAbortRef.current?.abort()   // 掐断正在跑的流，否则它的回复会写进"新"会话里
     setThreadId('')
     setMessages([])
     setAiText(''); setAiThinking('')
@@ -95,6 +103,8 @@ function App() {
     setIsLoading(true)              // 开始回话：锁住按钮
     setAiText('')                   // 清空上一轮的临时气泡
     setAiThinking('AI 正在思考…')    // 立刻显示"思考中"，不等后端响应
+    const controller = new AbortController()   // 这把"关掉水龙头的开关"挂到 ref 上
+    streamAbortRef.current = controller        // 切会话/新建会话时可以 abort 它，防串台
     try {
       // 1. 用户消息加进列表
       setMessages((prev) => [...prev, { id: Date.now(), role: 'user', text }])
@@ -126,6 +136,7 @@ function App() {
             'Authorization': `Bearer ${tk}`,
           },
           body: JSON.stringify({ prompt: text }),
+          signal: controller.signal,   // 挂上 abort 开关：切会话时能立刻掐断
         })
       }
 
@@ -133,6 +144,7 @@ function App() {
       // token 过期（401）：密码在登录表单里无法自动重登，清掉登录态回登录页（用户重新登录）
       if (res.status === 401) {
         setToken('')
+        localStorage.removeItem('token')   // 登录态也清出本地，刷新后不再自动回登录
         setMessages((prev) => [...prev, {
           id: Date.now(),
           role: 'system',
@@ -173,12 +185,16 @@ function App() {
       setMessages((prev) => [...prev, { id: Date.now(), role: 'assistant', text: answer }])
       setAiText('')
       setAiThinking('')
+      fetchThreads()   // 服务端已自动生成标题，刷新侧边栏（不然新会话一直显示"New Chat"）
     } catch (err) {
       setAiThinking('')
+      // 用户主动切走（abort）→ 不算错误，静默退出，别弹红字
+      if (err.name === 'AbortError') return
       setMessages((prev) => [...prev, {
         id: Date.now(),
         role: 'assistant',
-        text: '⚠️ 连不上后端，确认它在跑着（本机用 8001 起 uvicorn；或 docker compose up）',
+        // 区分错误：连不上是 TypeError（网络层），其余把真实消息抛出来（比如登录过期）
+        text: err instanceof TypeError ? '⚠️ 连不上后端，确认它在跑着（本机用 8001 起 uvicorn；或 docker compose up）' : `⚠️ ${err.message}`,
       }])
     } finally {
       setIsLoading(false)   // 不管成没成，最后都解锁
@@ -198,6 +214,7 @@ function App() {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
         })
+        if (!res.ok) throw new Error(`新建会话失败 ${res.status}`)   // 不检查会拿到 data.id=undefined → 上传到 /upload/undefined → 422 模糊报错
         const data = await res.json()
         tid = data.id
         setThreadId(tid)
@@ -217,7 +234,7 @@ function App() {
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       })
-      if (res.status === 401) { setToken(''); throw new Error('登录已过期，请重新登录') }
+      if (res.status === 401) { setToken(''); localStorage.removeItem('token'); throw new Error('登录已过期，请重新登录') }
       if (!res.ok) throw new Error(`上传失败 ${res.status}`)
 
       const data = await res.json()
@@ -234,6 +251,27 @@ function App() {
       }])
     } finally {
       setIsUploading(false)
+    }
+  }
+
+  // 删除会话：调 DELETE /threads/{id}（后端只删自己的），成功后刷新侧边栏。
+  // 删的是当前会话就顺带清空主区；流还在跑先掐断。
+  async function handleDeleteThread(id) {
+    streamAbortRef.current?.abort()
+    try {
+      const res = await fetch(`${BACKEND_URL}/threads/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error(`删除失败 ${res.status}`)
+      if (id === threadId) { setThreadId(''); setMessages([]); setAiText(''); setAiThinking('') }
+      fetchThreads()   // 删完刷新列表
+    } catch (err) {
+      setMessages((prev) => [...prev, {
+        id: Date.now(),
+        role: 'system',
+        text: `⚠️ 删除会话失败：${err.message}`,
+      }])
     }
   }
 
@@ -268,7 +306,7 @@ function App() {
   return (
     <div className="chat-app">
       {/* 左侧会话列表（侧边栏） */}
-      <ThreadList threads={threads} activeId={threadId} onSelect={handleSelectThread} onNew={handleNewThread} />
+      <ThreadList threads={threads} activeId={threadId} onSelect={handleSelectThread} onNew={handleNewThread} onDelete={handleDeleteThread} />
       {/* 右侧聊天区：消息列表 + 输入框 */}
       <div className="chat-main">
         <MessageList messages={messages} aiText={aiText} aiThinking={aiThinking} />
