@@ -1,0 +1,2703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>project5 设计问答 · 菜鸟教程式手册</title>
+<style>
+/* ========== 设计令牌 ========== */
+:root{
+  --accent:#059669;
+  --accent-dark:#047857;
+  --accent-soft:#ecfdf5;
+  --bg:#f5f7f6;
+  --surface:#ffffff;
+  --text:#1f2937;
+  --muted:#64748b;
+  --border:#e5e9f0;
+  --sidebar-bg:#ffffff;
+  --sidebar-text:#475569;
+  --sidebar-hover:#f2faf6;
+  --sidebar-active-bg:#ecfdf5;
+  --sidebar-active-text:#047857;
+  --sidebar-border:#e5e9f0;
+  --code-bg:#f2faf6;
+  --code-text:#0f3d2e;
+  --code-border:#d3ece2;
+  --code-inline-bg:#f2faf6;
+  --code-inline-text:#047857;
+  --note-bg:#f2f8f5;
+  --note-border:#5a8f7a;
+  --tip-bg:#ecfdf5;
+  --tip-border:#059669;
+  --warn-bg:#fff7e8;
+  --warn-border:#e8a33d;
+  --header-bg:#ffffff;
+  --header-text:#1f2937;
+  --header-sub:#64748b;
+  --table-head-bg:#f1f5f9;
+  --table-head-text:#334155;
+}
+body.dark{
+  --accent:#5db98f;
+  --accent-dark:#8fd4b2;
+  --accent-soft:#1b2f27;
+  --bg:#0f1a16;
+  --surface:#15241e;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --border:#223830;
+  --sidebar-bg:#0f1a16;
+  --sidebar-text:#cbd5e1;
+  --sidebar-hover:#1a2d24;
+  --sidebar-active-bg:#234034;
+  --sidebar-active-text:#8fd4b2;
+  --sidebar-border:#1a2d24;
+  --code-bg:#14271f;
+  --code-text:#cfe8da;
+  --code-border:#234034;
+  --code-inline-bg:#1b2f27;
+  --code-inline-text:#8fd4b2;
+  --note-bg:#16281f;
+  --note-border:#5a8f7a;
+  --tip-bg:#1b2f27;
+  --tip-border:#5db98f;
+  --warn-bg:#2b2315;
+  --warn-border:#e8a33d;
+  --header-bg:#0f1a16;
+  --header-text:#e2e8f0;
+  --header-sub:#94a3b8;
+  --table-head-bg:#1b2f27;
+  --table-head-text:#e2e8f0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:15px;line-height:1.75;
+  transition:background .2s,color .2s;
+}
+/* ========== 顶栏 ========== */
+.header{
+  height:56px;background:var(--header-bg);color:var(--header-text);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;position:fixed;top:0;left:0;right:0;z-index:50;
+  border-bottom:1px solid var(--border);
+  box-shadow:0 1px 2px rgba(16,24,40,.04);
+}
+.header .brand{display:flex;align-items:center;gap:12px;}
+.header .logo{
+  width:30px;height:30px;border-radius:6px;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;
+}
+.header h1{font-size:17px;font-weight:600;}
+.header .sub{font-size:12px;color:var(--header-sub);margin-top:1px;}
+.header .tools{display:flex;align-items:center;gap:10px;}
+.btn{
+  border:1px solid var(--border);background:transparent;color:var(--muted);
+  padding:6px 14px;border-radius:6px;font-size:13px;cursor:pointer;transition:.15s;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ========== 布局 ========== */
+.wrap{display:flex;padding-top:56px;height:100%;}
+/* 侧边栏 */
+.sidebar{
+  width:320px;min-width:320px;background:var(--sidebar-bg);color:var(--sidebar-text);
+  overflow-y:auto;padding:14px 10px 40px;height:calc(100vh - 56px);
+  position:sticky;top:56px;border-right:1px solid var(--sidebar-border);scrollbar-width:thin;
+}
+.sidebar .search{
+  width:100%;padding:8px 12px;border-radius:6px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text);font-size:13px;margin-bottom:12px;outline:none;
+}
+.sidebar .search:focus{border-color:var(--accent);}
+.sidebar .search::placeholder{color:var(--muted);}
+.sidebar .count{font-size:12px;color:var(--muted);padding:0 4px 8px;}
+/* 导航树 */
+.tree{list-style:none;}
+.top + .top{margin-top:12px;border-top:1px solid var(--sidebar-border);padding-top:12px;}
+.top-header{
+  display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:6px;
+  cursor:pointer;font-size:14px;font-weight:700;color:var(--text);user-select:none;
+}
+.top-header:hover{background:var(--sidebar-hover);}
+.top-header .dot{width:10px;height:10px;border-radius:3px;background:var(--accent);flex-shrink:0;}
+.top-header .arrow{font-size:10px;transition:transform .15s;width:12px;color:var(--muted);}
+.top-header .gname{flex:1;min-width:0;}
+.top-header .gcount{
+  font-size:11px;font-weight:500;color:var(--muted);flex-shrink:0;
+  background:var(--sidebar-hover);border:1px solid var(--sidebar-border);
+  padding:0 8px;border-radius:10px;line-height:17px;
+}
+.top.collapsed .arrow{transform:rotate(-90deg);}
+.top.collapsed .top-items{display:none;}
+.top-items{list-style:none;padding-left:10px;}
+.group + .group{margin-top:2px;}
+.group-header{
+  display:flex;align-items:center;gap:7px;padding:6px 10px;border-radius:6px;
+  cursor:pointer;font-size:13px;font-weight:600;color:var(--sidebar-text);user-select:none;
+}
+.group-header:hover{background:var(--sidebar-hover);color:var(--text);}
+.group-header .arrow{font-size:9px;transition:transform .15s;width:12px;color:var(--muted);flex-shrink:0;}
+.group-header .gname{flex:1;min-width:0;}
+.group-header .gcount{
+  font-size:11px;font-weight:500;color:var(--muted);flex-shrink:0;
+  background:var(--sidebar-hover);border:1px solid var(--sidebar-border);
+  padding:0 8px;border-radius:10px;line-height:17px;
+}
+.group.collapsed .arrow{transform:rotate(-90deg);}
+.group.collapsed .group-items{display:none;}
+.group-items{list-style:none;padding-left:10px;}
+.group-items li a{
+  display:flex;gap:7px;align-items:flex-start;padding:6px 10px 6px 14px;border-radius:6px;color:var(--sidebar-text);
+  text-decoration:none;font-size:13px;line-height:1.5;border-left:2px solid transparent;
+}
+.group-items li a:hover{background:var(--sidebar-hover);color:var(--text);}
+.group-items li a.active{background:var(--sidebar-active-bg);color:var(--sidebar-active-text);border-left-color:var(--accent);font-weight:600;}
+.group-items li a .qid{
+  font-family:Consolas,monospace;font-size:11px;opacity:.65;flex-shrink:0;
+  min-width:40px;padding-top:2px;
+}
+
+/* 内容区 */
+.content{flex:1;overflow-y:auto;padding:28px 40px 16px;min-width:0;display:flex;flex-direction:column;}
+.qas{max-width:860px;margin:0 auto;width:100%;flex:1;}
+.modpage{display:none;}
+.modpage.show{display:block;animation:fade .2s;}
+@keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+.mod-title{
+  font-size:12px;color:var(--muted);margin-bottom:22px;padding-bottom:10px;
+  border-bottom:1px solid var(--border);letter-spacing:.5px;
+  display:flex;align-items:center;gap:8px;
+}
+.mod-lv1{color:var(--accent);font-weight:700;font-size:13px;}
+.mod-arrow{opacity:.5;}
+.mod-lv2{font-weight:600;color:var(--text);font-size:13px;}
+.mod-count{margin-left:auto;font-size:11.5px;color:var(--muted);}
+.qa{display:block;}
+.qa-sep{border:none;border-top:1px dashed var(--border);margin:30px 0;}
+.qa:first-child{margin-top:0;}
+
+/* 可运行示例 */
+.run-example{margin:18px 0;}
+.run-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.run-label{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.5px;}
+.run-btn{
+  border:1px solid var(--accent);background:var(--accent);color:#fff;
+  font-size:12.5px;font-weight:600;padding:5px 16px;border-radius:6px;
+  cursor:pointer;transition:.15s;
+}
+.run-btn:hover{opacity:.88;}
+.run-btn:disabled{opacity:.5;cursor:wait;}
+.run-out{
+  display:none;margin-top:8px;padding:12px 14px;border-radius:8px;
+  background:#0f2a20;color:#cde8db;font-family:Consolas,monospace;
+  font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;
+}
+body.dark .run-out{background:#0a1a13;border:1px solid #1e3a2d;}
+
+/* 题目测试 */
+.quiz{margin:24px 0 4px;border:1px dashed var(--border);border-radius:10px;padding:14px 16px;background:rgba(5,150,105,.04);}
+body.dark .quiz{background:rgba(93,185,143,.08);}
+.quiz-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.quiz-head .hl{font-size:12.5px;font-weight:700;color:var(--accent-dark);letter-spacing:.5px;}
+.quiz-tag{font-size:11px;font-weight:600;color:var(--muted);border:1px solid var(--border);border-radius:20px;padding:2px 10px;}
+.quiz-show{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--accent-dark);background:var(--accent-soft);border:1px solid var(--border);border-radius:6px;padding:3px 10px;cursor:pointer;transition:.15s;}
+.quiz-show:hover{opacity:.85;}
+.quiz-q{font-size:14px;font-weight:600;margin:2px 0 10px;line-height:1.6;}
+.quiz-opts{display:flex;flex-direction:column;gap:6px;}
+.quiz-opt{
+  display:flex;align-items:center;gap:8px;font-size:13px;line-height:1.5;
+  padding:7px 12px;border:1px solid var(--border);border-radius:8px;
+  cursor:pointer;transition:.15s;user-select:none;
+}
+.quiz-opt:hover{border-color:var(--accent);}
+.quiz-opt .mark{width:18px;height:18px;flex:none;border:1.5px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;}
+.quiz-opt.right{border-color:#16a34a;background:#f0fdf4;color:#14532d;}
+.quiz-opt.right .mark{background:#16a34a;border-color:#16a34a;}
+.quiz-opt.wrong{border-color:#dc2626;background:#fef2f2;color:#7f1d1d;}
+.quiz-opt.wrong .mark{background:#dc2626;border-color:#dc2626;}
+.quiz-opt.locked{cursor:default;}
+.quiz-opt.locked:hover{border-color:var(--border);}
+body.dark .quiz-opt.right{background:#052e16;border-color:#16a34a;color:#86efac;}
+body.dark .quiz-opt.wrong{background:#2a0a0a;border-color:#dc2626;color:#fca5a5;}
+.quiz-answer{display:none;margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--accent-soft);color:var(--text);font-size:12.5px;line-height:1.7;}
+body.dark .quiz-answer{background:#1b2f27;}
+.quiz-answer.show{display:block;}
+.badge{
+  display:inline-block;font-size:12px;font-weight:600;padding:3px 12px;border-radius:20px;
+  background:var(--accent-soft);color:var(--accent-dark);margin-bottom:10px;
+  border:1px solid rgba(5,150,105,.25);
+}
+body.dark .badge{background:var(--accent-soft);color:var(--accent-dark);}
+.qa h2{font-size:22px;font-weight:700;margin-bottom:6px;line-height:1.4;}
+.qa .qid-line{font-family:Consolas,monospace;font-size:13px;color:var(--muted);margin-bottom:18px;}
+.qa .answer{font-size:15px;}
+.qa .answer p{margin-bottom:12px;}
+.qa .answer ul,.qa .answer ol{margin:0 0 12px 22px;}
+.qa .answer li{margin-bottom:6px;}
+.qa .answer strong{color:var(--text);}
+.qa .answer em{color:var(--muted);font-style:normal;}
+
+/* 代码 */
+pre.code{
+  background:var(--code-bg);color:var(--code-text);padding:14px 16px;border-radius:8px;
+  overflow-x:auto;font-family:Consolas,"Courier New",monospace;font-size:13px;line-height:1.6;
+  margin:12px 0;border:1px solid var(--code-border);white-space:pre;
+}
+code.inline{
+  background:var(--code-inline-bg);color:var(--code-inline-text);padding:1px 6px;border-radius:4px;
+  font-family:Consolas,monospace;font-size:13px;
+}
+
+/* 提示框 */
+.box{border-radius:8px;padding:12px 16px;margin:14px 0;border-left:4px solid;font-size:14px;}
+.box .box-title{font-weight:700;font-size:13px;margin-bottom:4px;}
+.box.note{background:var(--note-bg);border-color:var(--note-border);}
+.box.note .box-title{color:var(--note-border);}
+.box.tip{background:var(--tip-bg);border-color:var(--tip-border);}
+.box.tip .box-title{color:var(--tip-border);}
+.box.warn{background:var(--warn-bg);border-color:var(--warn-border);}
+.box.warn .box-title{color:var(--warn-border);}
+
+/* 上一步/下一步（吸底） */
+.pager{
+  position:sticky;bottom:0;z-index:5;
+  display:flex;justify-content:space-between;gap:12px;
+  max-width:860px;width:100%;margin:auto auto 0;
+  background:var(--bg);border-top:1px solid var(--border);
+  padding:14px 0 8px;
+}
+.pager button{
+  flex:1;padding:12px 16px;border:1px solid var(--border);background:var(--surface);
+  color:var(--text);border-radius:8px;cursor:pointer;font-size:14px;transition:.15s;
+  text-align:left;box-shadow:0 2px 6px rgba(16,24,40,.05);
+}
+.pager button:hover{border-color:var(--accent);color:var(--accent);}
+.pager button:disabled{opacity:.4;cursor:default;border-color:var(--border);color:var(--muted);}
+.pager .dir{font-size:12px;color:var(--muted);display:block;}
+.pager .name{font-weight:600;font-size:13.5px;}
+
+/* 表格（库辨析、结构地图） */
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+th{background:var(--table-head-bg);color:var(--table-head-text);text-align:left;padding:9px 12px;font-weight:600;font-size:13px;}
+td{padding:9px 12px;border-top:1px solid var(--border);vertical-align:top;}
+tr:nth-child(even) td{background:rgba(0,0,0,.02);}
+body.dark tr:nth-child(even) td{background:rgba(255,255,255,.02);}
+
+/* 树形结构图 */
+.tree-code{font-family:Consolas,monospace;font-size:13px;line-height:1.65;white-space:pre;overflow-x:auto;}
+.tree-code .t-comment{color:var(--muted);}
+
+/* 移动端 */
+@media (max-width:860px){
+  .sidebar{position:fixed;left:0;top:56px;bottom:0;z-index:40;transform:translateX(-100%);transition:transform .2s;}
+  .sidebar.open{transform:none;}
+  .menu-btn{display:inline-block !important;}
+  .content{padding:20px 16px 60px;}
+}
+.menu-btn{display:none;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="brand">
+    <button class="btn menu-btn" onclick="toggleSidebar()">☰</button>
+    <div class="logo">P5</div>
+    <div>
+      <h1>project5 设计问答</h1>
+      <div class="sub">AI 知识库平台 · 边学边记的 Q&amp;A 手册</div>
+    </div>
+  </div>
+  <div class="tools">
+    <button class="btn" onclick="toggleDark()">🌓 深色</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="sidebar" id="sidebar">
+    <input class="search" id="search" type="text" placeholder="🔍 搜索问题…（如：隔离 / 中间件 / 反向传播）">
+    <div class="count" id="count"></div>
+    <ul class="tree" id="tree"></ul>
+  </aside>
+
+  <!-- ========== 右侧内容 ========== -->
+  <main class="content">
+    <div class="qas" id="qas"></div>
+  </main>
+</div>
+
+<script>
+/* ================================================================
+ * 数据：每个条目 = 一个 Q&A 小节
+ * ================================================================ */
+const MODULES = [
+  { name:"基础部分", groups:[
+  { name:"Python 收尾", items:[
+    { id:"w1-1", q:"W1-1. Python 收尾四件套：装饰器 / dataclass / 注解 / async", badge:"基础 · Python", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>装饰器=包一层改行为（@app.post/@tool 都是它）；dataclass 少写 __init__，HTTP 场景用 Pydantic；注解标类型给 IDE 看，运行时不管；async 等待时让出 CPU，漏 await 或同步阻塞会卡事件循环</strong></div>
+      <ul>
+        <li><strong>装饰器</strong> = 包一层改行为：<code class="inline">@app.post</code> 注册路由、<code class="inline">@tool</code> 让模型看得见；本质 <code class="inline">@timer == fn=timer(fn)</code></li>
+        <li><strong>dataclass</strong> = 少写 <code class="inline">__init__</code>（自动送 repr/eq）；跟 HTTP 打交道用 <strong>Pydantic</strong>——校验 + 序列化，FastAPI 的 422 就靠它</li>
+        <li><strong>注解</strong> = 标类型给 IDE 看，运行时不强制；<code class="inline">str|None</code> 写法</li>
+        <li><strong>async/await</strong> = 等待时让出 CPU 不干坐；漏写 await 或同步阻塞（<code class="inline">time.sleep</code> / <code class="inline">requests.get</code>）都卡事件循环；<code class="inline">async for</code> 边等边读流</li>
+      </ul>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+import time
+
+def timer(fn):                      # @timer 的本质：fn = timer(fn)，包一层改行为
+    def wrap(*args, **kwargs):
+        t = time.perf_counter()
+        r = fn(*args, **kwargs)
+        print(f'{fn.__name__}() 耗时 {time.perf_counter() - t:.4f}s')
+        return r
+    return wrap
+
+@timer
+def slow(x):
+    time.sleep(0.2)
+    return x * 2
+
+print('结果 =', slow(21))
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">装饰器 @timer 的本质是什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>让 Python 运行时自动加速函数</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>fn = timer(fn)，把函数包一层改行为</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>声明函数的返回类型</div>
+        </div>
+        <div class="quiz-answer">✅ 装饰器=包一层改行为，@timer 等价于 fn = timer(fn) 后重新绑定原名字</div>
+      </div>`
+ }
+  ]},
+  { name:"机器学习 · L1-L8", items:[
+    { id:"w1-2", q:"W1-2. ML · KNN 核心（L1）", badge:"基础 · 机器学习", html:`
+      <p>KNN = 预测(分类)算法，不学参数，纯靠<strong>距离 + 邻居投票</strong>。</p>
+      <ul>
+        <li><strong>五步流程</strong>：加载 → 切分(80/20，测试集必须没见过) → fit(记住数据) → predict → 评估准确率</li>
+        <li><strong>K = 数几个邻居投票</strong>（不是相似度！），k 小过拟合、k 大欠拟合</li>
+        <li><strong>距离度量</strong>：欧氏 = 直线、曼哈顿 = 折线（RAG 余弦相似度是同类思想）</li>
+        <li><strong>fit = 学习，但学的对象各不同</strong>：KNN 记数据、StandardScaler 学均值/方差、LinearRegression 学系数</li>
+      </ul>
+
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">KNN 里的 K 指的是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>相似度阈值</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>找几个邻居投票（n_neighbors）</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>交叉验证切几份</div>
+        </div>
+        <div class="quiz-answer">✅ K = 数几个邻居投票；交叉验证的 K（cv）才是切几份</div>
+      </div>` },
+    { id:"w1-3", q:"W1-3. ML · 标准化 + 交叉验证（L1-L2）", badge:"基础 · 机器学习", html:`
+      <ul>
+        <li><strong>标准化解决量纲不一致</strong>：0-100 的身高会欺负 0-1 的体重</li>
+        <li><strong>归一化</strong> = [0,1]，用 min/max；<strong>标准化</strong> = 均值 0 方差 1，用 Z-score（更常用、不怕异常值）</li>
+        <li>KNN/SVM/逻辑回归/神经网络<strong>必做</strong>；决策树/随机森林<strong>不用</strong></li>
+        <li><strong>测试集只 transform 不 fit</strong>（防考试偷看答案，面试高频）</li>
+        <li><strong>交叉验证</strong> = 反复切训练集多轮轮流当验证集，得分更可信：验证集选参数用、测试集最终成绩用</li>
+      </ul>
+      <div class="box warn"><div class="box-title">实测反例</div>手写数字 64 特征本就同量纲：标准化后 0.9694 vs 不标准化 0.9833——无收益反而略降。<strong>标准化不是无脑做，先看特征尺度</strong>。GridSearchCV 自动找最佳 k=3。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">为什么测试集只 transform 不 fit？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>测试集不需要变换</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>防止测试集信息泄露进训练（偷看答案）</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>fit 会直接报错</div>
+        </div>
+        <div class="quiz-answer">✅ 均值/方差只能从训练集学，测试集套用，否则等于考试偷看答案</div>
+      </div>` },
+    { id:"w1-4", q:"W1-4. ML ⚠️ 易混 · 两个 K 搞混", badge:"基础 · 机器学习", html:`
+      <ul>
+        <li><strong>KNN 的 K</strong>（n_neighbors）= 找几个邻居投票，如 k=3 是最近的 3 个邻居</li>
+        <li><strong>交叉验证的 K</strong>（cv）= 数据切几份轮流考试，如 cv=5 是切 5 份、5 轮</li>
+      </ul>
+      <p>120 条 + cv=5：每轮训练 96 条、验证 24 条。GridSearchCV = 把所有候选参数（k=1,3,5...）各跑一遍交叉验证，选得分最高的。</p>
+      <div class="box tip"><div class="box-title">一句话</div><strong>交叉验证是「考卷」，k 是「学生」，网格搜索是「拉所有学生考一遍选最好的」</strong>。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">GridSearchCV 里 cv=5 表示什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>找 5 个最近的邻居投票</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>数据切 5 份，5 轮轮流当验证集</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>训练 5 个不同的模型</div>
+        </div>
+        <div class="quiz-answer">✅ cv = 交叉验证的 K = 切几份轮流考试；KNN 的 K 才是邻居数</div>
+      </div>` },
+    { id:"w1-5", q:"W1-5. ML · 线性回归（L3）", badge:"基础 · 机器学习", html:`
+      <ul>
+        <li>回归 = 画一条让误差最小的直线 <code class="inline">y = wx + b</code>（w 斜率、b 截距）；fit 学的是 w/b</li>
+        <li>最合适 = 让 <strong>MSE 最小</strong>的线：MSE = 误差²取平均（损失函数本体，手算 = sklearn 同为 808.8）</li>
+        <li><strong>指标三兄弟</strong>：RMSE = √MSE 救回单位（平均偏 28.4 万）；MAE = 绝对值平均（22.2 万，不放大）；R² = 比瞎猜均值好多少（0.918）</li>
+        <li><strong>找解两条路</strong>：正规方程 = 求导一步精确解（特征少用、零参数可调）；梯度下降 = 闭眼下坡迭代逼近（数据大 / 深度学习用）</li>
+      </ul>
+      <div class="box warn"><div class="box-title">易混</div>回归输出<strong>连续数值</strong> ≠ 分类输出<strong>类别</strong>；LinearRegression 没有 K 可调（最优解直接能算出）。</div>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+# MSE 手算：每个误差平方后取平均（sklearn 的 LinearRegression 内部就在最小化它）
+y_true = [3.0, -0.5, 2.0, 7.0]
+y_pred = [2.5, 0.0, 2.0, 8.0]
+
+mse = sum((y - p) ** 2 for y, p in zip(y_true, y_pred)) / len(y_true)
+print('MSE  =', mse)
+print('RMSE =', round(mse ** 0.5, 3))   # 开根号救回原单位
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">线性回归 fit 学到的是什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>训练数据本身</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>斜率 w 和截距 b</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>每个样本的权重</div>
+        </div>
+        <div class="quiz-answer">✅ fit 学 w/b 让 MSE 最小；KNN 才"记数据"，StandardScaler 学均值/方差</div>
+      </div>`
+ },
+    { id:"w1-6", q:"W1-6. ML · 欠/过拟合 + 正则化（L4）", badge:"基础 · 机器学习", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>欠拟合=没学够（两边都低）；过拟合=背住训练集（训练高测试崩）；正则化 L2 压小权重、L1 压成 0 自动选特征；α 像 KNN 的 k 一样要调</strong></div>
+      <ul>
+        <li><strong>欠拟合</strong> = 太简单没学够（训练/测试都低：deg1-2 约 0.52-0.57）</li>
+        <li><strong>过拟合</strong> = 背住训练集（训练高、测试崩：deg=15 训练 0.979、测试 R²=-540！）</li>
+        <li><strong>判断口诀</strong>：训练高 + 测试高 = 好；训练高 + 测试崩 = 过拟合</li>
+        <li><strong>对策 = 正则化罚款</strong>：L2(Ridge) 权重压小不归零；L1(Lasso) 直接压成 0 自动选特征（15 个系数只剩 1 个非 0）</li>
+        <li><strong>α = 惩罚力度</strong>：太小没用、太大会压死有用特征（α=1.0 测试 R² 反降）→ α 就是「回归版需要调的参数」，同 KNN 的 k 一样走交叉验证</li>
+        <li><strong>梯度下降复习</strong>：学习率 = 步长，lr=0.1 稳步逼近 vs lr=0.9 来回震荡（5.40→1.08→4.54→1.77→3.98）</li>
+      </ul>
+
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">过拟合的判断口诀是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>两边都低</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>训练高 + 测试崩</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>训练低 + 测试高</div>
+        </div>
+        <div class="quiz-answer">✅ 训练高+测试高=好；训练高+测试崩=过拟合；两边都低=欠拟合</div>
+      </div>` },
+    { id:"w1-7", q:"W1-7. ML · 逻辑回归（L5）", badge:"基础 · 机器学习", html:`
+      <p>名字叫回归，其实是<strong>分类</strong>！线性回归输出 (-∞,+∞) 没法当概率 → <strong>sigmoid</strong> 把 <code class="inline">z = w·x + b</code> 压进 (0,1)，&gt;0.5 判 1。</p>
+      <ul>
+        <li><strong>混淆矩阵</strong> [[TN,FP],[FN,TP]]：TN/TP = 判对、FP = 误报、FN = 漏报（最要命）；准确率 = (TN+TP)/全部 = 0.974</li>
+        <li><strong>精确率</strong> = TP/(TP+FP) = 0.976，管误报（判患癌里的人真有病）；<strong>召回率</strong> = TP/(TP+FN) = 0.953，管漏报（真病人里找出来多少）；两者必然此消彼长</li>
+        <li><strong>阈值 = 松紧旋钮</strong>：调低 → 召回升精确降（筛查宁抓错不放过 0.3）；调高 → 更保守（0.7 精确=1.0）</li>
+        <li><strong>AUC</strong> = ROC 曲线下面积 = 所有阈值整体分辨力 0.997；0.5 = 瞎猜、1 = 完美</li>
+      </ul>
+      <div class="box warn"><div class="box-title">易混三连</div><strong>准确率 ≠ 精确率 ≠ 召回率</strong>。</div>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+import math
+
+def sigmoid(z):
+    return 1 / (1 + math.exp(-z))   # 把 (-inf,+inf) 压进 (0,1)
+
+def score(x1, x2):                  # 线性部分 z = w*x + b
+    return 0.5 * x1 - 1.2 * x2 + 0.3
+
+for x1, x2 in [(2, 1), (1, 3), (0, 0)]:
+    p = sigmoid(score(x1, x2))
+    print(f'x=({x1},{x2})  概率={p:.3f}  -&gt;  {"患病" if p &gt; 0.5 else "健康"}')
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">召回率管的是什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>误报——判患癌里的水分</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>漏报——真病人里找出多少</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>整体准确率</div>
+        </div>
+        <div class="quiz-answer">✅ 精确率管误报 TP/(TP+FP)，召回率管漏报 TP/(TP+FN)，两者此消彼长</div>
+      </div>`
+ },
+    { id:"w1-8", q:"W1-8. ML · 决策树（L6）", badge:"基础 · 机器学习", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>树=一层层 if-else 规则集；熵=不确定度（越纯越低）；每步挑信息增益最大的特征切；剪枝 max_depth 治过拟合</strong></div>
+      <ul>
+        <li>树 = 一层层 if-else 叠出的规则集，可解释性最强（根到叶每条路 = 一条人话规则）</li>
+        <li><strong>熵 = 不确定度</strong>：全 A = 0（最纯）、2A2B = 1（最乱）；树的目标 = 切得越来越纯、熵一路下降</li>
+        <li><strong>信息增益</strong> = 父熵 - (左占比·左熵 + 右占比·右熵) = 切开后的纯度提升量；建树 = 每一步挑增益最大的特征切</li>
+        <li><strong>过拟合演示</strong>：depth=1 测试 0.611 欠拟合 / depth=3 0.963 均衡 / None 训练 1.000 背答案 → 剪枝 <code class="inline">max_depth</code>（同 L4 的 α，一个压权重一个砍树）</li>
+        <li><strong>三种树一句记</strong>：ID3 = 信息增益（偏爱取值多特征）、C4.5 = 增益率（给多取值打折修正）、CART = 基尼指数（sklearn 默认，还支持回归）</li>
+      </ul>
+
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">熵 = 0 表示什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>数据最乱</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>数据最纯（全是一类）</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>特征数量最多</div>
+        </div>
+        <div class="quiz-answer">✅ 全 A 熵=0 最纯，2A2B 熵=1 最乱；树的目标是切得越来越纯</div>
+      </div>` },
+    { id:"w1-9", q:"W1-9. ML · 集成学习（L7）", badge:"基础 · 机器学习", html:`
+      <ul>
+        <li>集成 = 一群弱模型变强：500 棵 depth1 树桩投票 测试 0.895→0.939（投票把个别树的错淹掉）</li>
+        <li><strong>Bagging</strong> = 并行 + 放回抽样 + 投票 → 降方差/治过拟合；<strong>随机森林</strong> = Bagging + 每棵树只看随机特征 → 树更不相似、错不重叠（0.956→0.965）</li>
+        <li><strong>Boosting</strong> = 串行错题集：后一棵专补前一棵答错的样本 → 降偏差/治欠拟合；AdaBoost 200 轮测试 0.974 本例最强；GBDT = 每棵新树拟合上一轮残差 = L4 梯度下降换个形式（函数空间下坡）</li>
+      </ul>
+      <div class="box tip"><div class="box-title">面试模板</div><strong>Bagging（并行 / 投票 / 方差）vs Boosting（串行 / 补错 / 偏差）</strong>；树模型不用标准化（对尺度不敏感，对比 L2 KNN 必须标准化）。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">Bagging 和 Boosting 的核心区别？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>Bagging 串行、Boosting 并行</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>Bagging 并行投票降方差；Boosting 串行补错降偏差</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>两者都只降偏差</div>
+        </div>
+        <div class="quiz-answer">✅ Bagging=并行+放回抽样+投票→降方差；Boosting=串行错题集→降偏差</div>
+      </div>` },
+    { id:"w1-10", q:"W1-10. ML · 朴素贝叶斯 + XGBoost（L8）", badge:"基础 · 机器学习", html:`
+      <ul>
+        <li><strong>朴素贝叶斯</strong> = 贝叶斯公式 + 特征独立假设：<code class="inline">P(类|特征) = 似然×先验÷证据</code>，谁大判给谁；训练 = 统计频数（秒级）；优点小样本/能出概率/几乎免调参，缺点特征强相关会偏（独立假设常不成立）</li>
+        <li><strong>XGBoost</strong> = GBDT 工程加强版（面试五点）：正则化项防过拟合、二阶导牛顿法收敛更快、列抽样、内置缺失值处理、并行直方图</li>
+        <li><strong>全家福</strong>：朴素贝叶斯 0.974 = AdaBoost 0.974 &gt; 随机森林 0.965 &gt; XGBoost 0.956 → 小数据上简单模型追平反超</li>
+      </ul>
+      <div class="box tip"><div class="box-title">面试答案</div><strong>数据越大、特征越多，XGBoost 优势越明显</strong>。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">朴素贝叶斯"朴素"在哪里？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>假设数据服从正态分布</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>假设特征相互独立</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>假设先验概率相等</div>
+        </div>
+        <div class="quiz-answer">✅ 贝叶斯公式 + 特征独立假设；特征强相关时独立假设不成立会偏</div>
+      </div>` },
+  ]},
+  { name:"深度学习概念", items:[
+    { id:"h1", q:"H1. 感知机是什么？", badge:"模块 H", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>感知机=加权投票器：权重×输入 求和过阈值出 0/1；单兵只能分直线，一堆拼成神经网络</strong></div>
+      <ul>
+        <li><strong>是什么</strong>：神经网络的最小单元，一个"加权投票器"——每个输入按自己的权重打分（权重 = 这个因素多重要），加权求和，过阈值输出 0/1（过了 = 1，没过 = 0）。权重 = 重要性，阈值 = 激进程度。</li>
+        <li>单个感知机只能画"直线"分两类（线性）；<strong>一堆拼起来 = 神经网络</strong>，才能处理复杂问题。记忆：感知机是砖，神经网络是墙。</li>
+        <li>生活例子：周末出门决策——天气 3 分、心情 2 分、预算 2 分，加权和 ≥5 出门。</li>
+      </ul>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">单个感知机能做什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>任意复杂度的分类</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>画一条直线分两类（线性）</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>自动聚类</div>
+        </div>
+        <div class="quiz-answer">✅ 单兵只能分直线，一堆拼成神经网络才能处理复杂问题</div>
+      </div>` },
+    { id:"h2", q:"H2. 反向传播是什么？（训练机制）", badge:"模块 H", html:`
+      <ul>
+        <li><strong>是什么</strong>：回答"几百万个权重怎么知道往哪调"——误差从输出层<strong>往回</strong>逐层分摊到每个权重，按贡献调参。</li>
+        <li><strong>四步循环</strong>：前向（数据过一遍网络）→ 算误差（预测 vs 正确答案差多少）→ 回传分摊（谁贡献大谁被调得多）→ 更新权重。重复百万次，误差越调越小。</li>
+        <li><strong>易错点（复盘纠正）</strong>：调整量看<strong>对误差的贡献度（梯度）</strong>，不看权重本身大小——像考砸复盘重点补"失分最多的知识点"，不是"讲得最轻的"。</li>
+        <li><strong>和已学知识的联系</strong>：权重更新 <code class="inline">w_new = w_old − 学习率 × 梯度</code> 就是线性回归（L3）里的<strong>梯度下降</strong>同款公式。反向传播 = 多层嵌套的梯度下降（梯度用链式法则穿过每一层）。</li>
+      </ul>
+      <div class="box tip"><div class="box-title">一句话</div><strong>反向传播 = 多层回归训练，每一层都在做梯度下降</strong>。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">反向传播中，权重调整量取决于什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>权重本身的大小</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>对误差的贡献度（梯度）</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>网络层数</div>
+        </div>
+        <div class="quiz-answer">✅ 看梯度/贡献度，像考砸复盘补"失分最多的知识点"</div>
+      </div>` },
+    { id:"h3", q:"H3. 训练 vs 推理？（同一套权重的两种状态）", badge:"模块 H", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>训练=反复调权重（慢贵）；推理=固定权重算一遍（快便宜）；调 API 付的全是推理的钱</strong></div>
+      <ul>
+        <li>训练 = 拿大量数据反复"前向→回传→更新"调权重：慢、吃算力、烧钱，只有模型厂商做。</li>
+        <li>推理 = 权重已固定，输入直接算一遍输出：快、便宜，我们调 API 干的全是推理。</li>
+        <li>对上号：调 DeepSeek API 付的是<strong>推理</strong>的钱，模型是别人训练好的，我们只是租用固定权重做预测。<strong>AI 应用开发者的工作基本全在推理侧：不训练模型，而是组合/编排/调用别人的模型</strong>（RAG、Agent、project5 都是）。</li>
+      </ul>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">调 DeepSeek API 付的是什么钱？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>训练</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>推理</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>微调</div>
+        </div>
+        <div class="quiz-answer">✅ 权重已固定，我们只是租用别人训练好的模型做预测 = 推理</div>
+      </div>` },
+    { id:"h4", q:"H4. 微调 vs LoRA？（领域适配的两种路径）", badge:"模块 H", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>微调=全量重训（贵）；LoRA=冻结 W 只训小补丁 A×B（省一个量级）——书 vs 贴笔记</strong></div>
+      <ul>
+        <li>微调 = 原权重 W <strong>全部</strong>继续训练：效果好但贵——完整算力 + 每个领域存一份全量模型。</li>
+        <li>LoRA = 原权重 W <strong>冻结不动</strong>，只训练一个小的低秩补丁 A×B，最终权重 = <strong>W + 补丁</strong>：只训不到 0.1% 的参数，效果接近、成本低一个量级。</li>
+        <li>类比：微调 = 整本书重写一遍；LoRA = 书不动，在旁边贴一套笔记。</li>
+      </ul>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">LoRA 的本质是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>全量重训所有参数</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>冻结原权重 W，只训小补丁 A×B，最终 W+补丁</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>只改输出层</div>
+        </div>
+        <div class="quiz-answer">✅ 微调=整本书重写；LoRA=书不动贴笔记，只训不到 0.1% 参数，省一个量级</div>
+      </div>` },
+    { id:"h5", q:"H5. 什么时候用 RAG、什么时候用微调？（面试题）", badge:"模块 H", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>知识外部会变→RAG；行为格式固定→微调；project5 是外部会变的文档→RAG 正确</strong></div>
+      <ul>
+        <li>知识在<strong>外部、会变</strong>（项目文档、公司资料）→ <strong>RAG</strong>（检索到内容喂给模型）</li>
+        <li><strong>行为/格式固定</strong>、不靠外部知识（固定话术、特定输出格式、私有风格）→ <strong>微调</strong></li>
+        <li>project5 的知识 = 用户上传的文档（外部、会变）→ RAG 是正确选择，不需要微调。</li>
+      </ul>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">知识在外部且会变（如项目文档），该用什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>微调</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>RAG</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>两者都做才能工作</div>
+        </div>
+        <div class="quiz-answer">✅ 知识外部会变→RAG；行为格式固定→微调；project5 是外部文档→RAG</div>
+      </div>` },
+  ]},
+  { name:"Agent 骨架", items:[
+    { id:"i1", q:"I1. Agent 和 RAG 差在哪？", badge:"模块 I", html:`
+      <ul>
+        <li>RAG = 固定管道：用户问 → 检索 → 拼 prompt → 回答。<strong>模型没有选择权</strong>，每次都查。</li>
+        <li>Agent = <strong>模型自己决定</strong>：要不要查？查完要不要再查？还是直接答？控制权在模型手里，是个循环。</li>
+      </ul>
+      <div class="box tip"><div class="box-title">一句话</div>RAG 是"模型被喂资料"，Agent 是"模型自己找资料、找几次自己说了算"。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">Agent 和 RAG 的核心区别？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>Agent 一定比 RAG 快</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>模型自己决定要不要查、查几次</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>RAG 不需要模型参与</div>
+        </div>
+        <div class="quiz-answer">✅ RAG=固定管道每次查；Agent=模型自己决定，是个循环</div>
+      </div>` },
+    { id:"i2", q:"I2. Agent 骨架就三样？", badge:"模块 I", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>骨架三样：LLM 节点（决策）+ 工具节点（执行）+ 条件边（回路）；任何框架都是这三样</strong></div>
+      <ul>
+        <li><strong>LLM 节点</strong>（决策者）：看完结果决定下一步，一次对话里触发多次</li>
+        <li><strong>工具节点</strong>（执行者）：检索 / 搜索 / 计算这些"手"</li>
+        <li><strong>条件边</strong>（回路）：判断"LLM 说要调工具 → 走工具节点；直接给答案 → 输出"</li>
+      </ul>
+      <p>任何 Agent 框架（LangGraph 等）都是这三样 + 循环。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">Agent 骨架三样是什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>记忆 + 规划 + 执行</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>LLM 节点 + 工具节点 + 条件边</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>检索 + 重排 + 生成</div>
+        </div>
+        <div class="quiz-answer">✅ 任何 Agent 框架都是这三样 + 循环</div>
+      </div>` },
+    { id:"i3", q:"I3. 为什么叫\"循环\"而不是\"管道\"？", badge:"模块 I", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>工具返回后回到 LLM 再决策，直到直接输出——次数不固定所以叫循环</strong></div>
+      <p>工具返回结果后<strong>回到 LLM 再决策一次</strong>——LLM → 工具 → LLM → 工具 → … → 直到 LLM 直接输出。次数不固定，由模型决定（所以叫 Agent，不是固定流程）。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">为什么叫"循环"而不是"管道"？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>代码里用了 for 循环</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>工具返回后回到 LLM 再决策，次数不固定</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>固定执行两次</div>
+        </div>
+        <div class="quiz-answer">✅ LLM→工具→LLM→…直到直接输出，次数由模型决定</div>
+      </div>` },
+    { id:"i4", q:"I4. 对上号 project5 的 langgraph_agent.py？", badge:"模块 I", html:`
+      <ul>
+        <li>model 节点 = 调 LLM（决策者）</li>
+        <li>web_search 工具 = 工具节点</li>
+        <li>route 类函数 = 条件边：看模型返回有没有 tool_calls，有 → 工具节点，没有 → 结束</li>
+      </ul>
+      <div class="box tip"><div class="box-title">记忆</div><strong>Agent 骨架 = LLM 决策 + 工具执行 + 条件边循环</strong>——"一个会自己查资料的模型"。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">project5 的 route 类函数对应骨架哪部分？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>LLM 节点</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>条件边</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>工具节点</div>
+        </div>
+        <div class="quiz-answer">✅ route 看模型返回有没有 tool_calls：有→工具节点，没有→结束</div>
+      </div>` },
+    { id:"i5", q:"I5. 和 W5 多Agent 平台的关系？", badge:"模块 I", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>现在是地基；W5 用 LangGraph 正式深度学（多节点编排 / State / 并行 / Memory）</strong></div>
+      <p>现在只到"能讲即可"；W5 起用 LangGraph 正式深度学（多节点编排 / State / 并行 / Memory），这里是地基。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">现在学 Agent 到什么程度？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>已经精通多节点编排</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>能讲即可，W5 用 LangGraph 正式深度学</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>只学 RAG 不学 Agent</div>
+        </div>
+        <div class="quiz-answer">✅ 现在只到"能讲即可"，W5 起深度学多节点编排/State/并行/Memory</div>
+      </div>` },
+  ]},
+  ]},
+  { name:"应用开发 · 框架核心", groups:[
+  { name:"LangChain 工具箱", items:[
+    { id:"k1", q:"F1. LangChain 是什么？LCEL 管道长啥样？", badge:"框架 · LangChain", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>LangChain = 工具箱+胶水：把 prompt/llm/解析/记忆/检索 串成管道；LCEL 用 <code class="inline">|</code> 声明式管道，像 Unix 管道</strong></div>
+      <ul>
+        <li><strong>核心组合</strong>：<code class="inline">chain = prompt | llm | StrOutputParser()</code> = 组装→调模型→解析</li>
+        <li><strong>结构化输出</strong>：<code class="inline">prompt | llm | PydanticOutputParser(...)</code>，输出直接是对象，下游能用</li>
+        <li><strong>多轮记忆</strong>：<code class="inline">RunnableWithMessageHistory</code> 管对话历史</li>
+        <li><strong>新版 1.0 + deepagents</strong>：<code class="inline">create_agent(model, tools=[...], system_prompt=...)</code> 一行起带工具循环+记忆的 Agent；Middleware 钩子（before/after_model、wrap_tool_call）在不动上游源码的前提下插逻辑——和 project4「构造后注入」同一思路</li>
+      </ul>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">LCEL 管道 <code class="inline">prompt | llm | parser</code> 表示什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>三个函数串行调用，每个都必须手动传参</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>声明式管道：组装→调模型→解析，像 Unix 管道</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>只在本地跑，不能接真实模型</div>
+        </div>
+        <div class="quiz-answer">✅ LCEL = 声明式管道，<code class="inline">prompt | llm | parser</code> 一键串起来，可读/流式/重试</div>
+      </div>` },
+    ]},
+  { name:"RAG 检索增强", items:[
+    { id:"k2", q:"F2. RAG 四步是什么？关键参数怎么选？", badge:"框架 · RAG", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>RAG = 先检索你的资料再让 LLM 回答（开卷考试）：切分 → 嵌入 → 检索 → 生成</strong></div>
+      <ul>
+        <li><strong>四步</strong>：长文档切分文本块 → 嵌入成向量 → 存向量库 → 用户问题也嵌入 → 相似度检索 top-k → 拼 <code class="inline">{context}</code> 给 LLM 生成</li>
+        <li><strong>chunk_size</strong>：小=精细碎片化 / 大=完整但噪声；<strong>overlap</strong> 保相邻块衔接不丢语义；<strong>top-k</strong> 是取几条的数量，不是阈值</li>
+        <li><strong>评估四件套</strong>：faithfulness(照不照依据) / answer_relevancy(跑不跑题) / context_precision(相关排前没) / context_recall(该检的检到没)，要一起用</li>
+        <li><strong>2026 趋势（了解）</strong>：Agentic RAG（检索作为 Agent 工具）、GraphRAG（知识图谱多跳）、Hybrid Search + Reranker 已成生产标配</li>
+      </ul>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+# 模拟 RAG 检索：余弦相似度 top-k（不依赖任何库）
+docs = [
+  "FastAPI 用依赖注入管理数据库会话",
+  "装饰器是包一层改函数行为",
+  "向量数据库按相似度秒级检索 top-k",
+  "Docker 用 Compose 一键编排多个容器",
+]
+q = "怎么按相似度快速找文档？"
+
+def cosine(a, b):
+    dot = sum(x*y for x, y in zip(a, b))
+    na = sum(x*x for x in a) ** 0.5
+    nb = sum(x*x for x in b) ** 0.5
+    return dot / (na * nb) if na and nb else 0
+
+# 简易词袋向量（含关键词就算 1）
+import re
+def vec(t):
+    words = set(re.findall(r"[\u4e00-\u9fa5]+", t))
+    return {w: 1 for w in words}
+
+qv = vec(q)
+scores = []
+for d in docs:
+    dv = vec(d)
+    keys = set(qv) | set(dv)
+    a = [qv.get(k, 0) for k in keys]
+    b = [dv.get(k, 0) for k in keys]
+    scores.append((cosine(a, b), d))
+scores.sort(reverse=True)
+for s, d in scores[:2]:
+    print(f"{s:.2f}  {d}")
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">RAG 的完整四步顺序是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>切分 → 嵌入 → 检索 → 生成</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>嵌入 → 切分 → 生成 → 检索</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>生成 → 检索 → 切分 → 嵌入</div>
+        </div>
+        <div class="quiz-answer">✅ 先切文档 → 嵌入成向量 → 相似度检索 → 拼 context 给 LLM 生成（开卷考试）</div>
+      </div>` },
+    { id:"k3", q:"F3. Embedding 是什么？余弦相似度怎么理解？", badge:"框架 · Embedding", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>Embedding = 把文字变向量（RAG 的翻译器）：语义相近 → 向量相近 → 能算距离；余弦越大越像</strong></div>
+      <ul>
+        <li><strong>为什么用</strong>：文本无法直接比"像不像"，变向量后能算余弦距离做相似度检索</li>
+        <li><strong>一眼看懂</strong>：<code class="inline">client.embeddings.create(model=, input=文本)</code> → 返回数字列表（如 1024 维）</li>
+        <li><strong>选型</strong>：中文初学用 BGE（便宜）；进阶 Qwen3-Embedding（中文榜更强，可本地部署）</li>
+        <li><strong>易混</strong>：Embedding 模型 ≠ 生成模型，各管一摊；相似度 0 ≠ 幻觉（幻觉只发生在生成阶段）</li>
+      </ul>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">余弦相似度越大代表什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>两个文本完全无关</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>语义越相近</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>文本长度越长</div>
+        </div>
+        <div class="quiz-answer">✅ 语义相近→向量相近→余弦越大越像；Embedding 模型≠生成模型</div>
+      </div>` },
+    { id:"k4", q:"F4. ChromaDB 向量数据库用来干嘛？", badge:"框架 · ChromaDB", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>ChromaDB = 向量数据库：把成千上万向量存下来，按相似度秒级检索 top-k</strong></div>
+      <ul>
+        <li><strong>入库</strong>：<code class="inline">collection.add(documents=, embeddings=, ids=)</code></li>
+        <li><strong>检索</strong>：<code class="inline">collection.query(query_embeddings=, n_results=3)</code></li>
+        <li><strong>记忆</strong>：distance 越小越像；持久化用 <code class="inline">PersistentClient(path=)</code></li>
+        <li><strong>安全（2026 必知）</strong>：装 ChromaDB 务必 >= 1.5.9——1.0.0–1.5.8 有 CVE-2026-45829（预认证 RCE，CVSS 10.0），已修于 1.5.9</li>
+      </ul>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">ChromaDB 的核心职责是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>存普通 SQL 业务表</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>直接生成 LLM 回答</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>存向量 + 按相似度检索 top-k</div>
+        </div>
+        <div class="quiz-answer">✅ 存向量、按相似度秒级检索 top-k；distance 越小越像</div>
+      </div>` },
+    ]},
+  { name:"Agent 与 ReAct", items:[
+    { id:"k5", q:"F5. ReAct 循环怎么转？", badge:"框架 · ReAct", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>Agent 核心 = LLM⇄工具 循环：思考 → 行动（调工具）→ 观察（工具结果）→ 再思考…直到直接回答</strong></div>
+      <ul>
+        <li><strong>ReAct = Reason + Act</strong>：一边推理（要查什么）一边行动（调工具），观察结果再决定下一步</li>
+        <li><strong>实现</strong>：<code class="inline">llm.bind_tools([...])</code> 告诉 LLM 有哪些工具；LLM 返回 tool_calls → 工具节点执行 → 包成 ToolMessage 回填 → 回 LLM 再决策</li>
+        <li><strong>为什么叫循环</strong>：次数不固定，由模型决定（这也是 Agent 和固定管道的本质区别）</li>
+      </ul>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+# 模拟 ReAct 循环：思考→行动→观察，直到 LLM（模拟器）直接回答
+def llm(thought, tools, memories):
+    # 模拟模型决策：想查温度就调工具，否则直接答
+    if "温度" in thought:
+        return {"action": "get_temperature", "action_input": "上海"}
+    return {"action": "answer", "answer": "上海今天 28 度"}
+
+def run_tool(name, arg):
+    if name == "get_temperature":
+        return "28 度，多云"     # 工具观察结果
+    return "未知工具"
+
+tools = {"get_temperature": run_tool}
+memories = []
+thought = "用户想知道上海温度，需要先查工具"
+step = 0
+while step < 5:                       # 循环上限保护
+    step += 1
+    print(f"[思考 {step}] {thought}")
+    dec = llm(thought, tools, memories)
+    if dec["action"] == "answer":
+        print(f"[回答] {dec['answer']}")
+        break
+    obs = tools[dec["action"]](dec["action"], dec["action_input"])
+    print(f"[行动] 调 {dec['action']}({dec['action_input']}) → [观察] {obs}")
+    thought = "已经查到" + str(obs) + "，直接回答即可"
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">ReAct 循环中的"行动"指什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>把结果直接打印给用户</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>调用工具（如检索/搜索/计算）</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>切换另一个大模型</div>
+        </div>
+        <div class="quiz-answer">✅ 思考→行动（调工具）→观察（工具结果）→再思考，直到直接回答</div>
+      </div>` },
+    { id:"k6", q:"F6. 黑盒 create_agent vs 手写 StateGraph 怎么选？", badge:"框架 · Agent", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>黑盒 <code class="inline">create_agent</code> 内部就是 LLM⇄工具循环；手写 StateGraph 能拆开看每一步</strong></div>
+      <ul>
+        <li><strong>黑盒</strong>：<code class="inline">create_agent(model, tools=[...], system_prompt=...)</code>，快速原型更省事（project2 第一站）</li>
+        <li><strong>手写</strong>：StateGraph 拆开理解路由机制（project3 把它拆开手写）</li>
+        <li><strong>怎么选</strong>：流程固定 → 手写更可控；快速原型 → 黑盒更省事</li>
+      </ul>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">什么时候适合手写 StateGraph 而不是黑盒 create_agent？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>只想最快跑通 demo</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>流程固定、需要掌控每一步</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>完全没有工具需要调用</div>
+        </div>
+        <div class="quiz-answer">✅ 流程固定→手写更可控；快速原型→黑盒更省事</div>
+      </div>` },
+    { id:"k7", q:"F7. gpt-researcher / project4 的构造后注入是什么？", badge:"框架 · 深度研究", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>临摹开源框架做差异化：构造后注入 = 改行为不改源码——把硬编码的组件换成自己的子类，上游零改动</strong></div>
+      <ul>
+        <li><strong>是什么</strong>：生产级研究 Agent——planner 规划子问题 → execution 多路检索（本地+网页 Hybrid）→ publisher 写报告</li>
+        <li><strong>核心手法</strong>：<code class="inline">__init__</code> 硬编码 ResearchConductor，但调用时才取 self.research_conductor → 构造完直接替换成我们的子类</li>
+        <li><strong>4 个扩展点</strong>：① 来源分级+离线优先（本地比论坛可信）② 结构化输出（Pydantic）③ 跨会话记忆续跑 ④ 内容安全闸门（防密钥写进报告）</li>
+        <li><strong>国产替代</strong>：DeepSeek + 博查 BoCha 替代 OpenAI + Tavily，国内能真跑起来</li>
+      </ul>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">构造后注入最大的好处是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>让原框架跑得更快</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>把整个框架重写一遍</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>在不动上游源码的前提下替换组件、加差异化</div>
+        </div>
+        <div class="quiz-answer">✅ 构造后注入 = 改行为不改源码，上游零改动，复用量大且可插拔</div>
+      </div>` },
+    ]},
+  { name:"MCP 与 LangGraph", items:[
+    { id:"k8", q:"F8. MCP 是什么？和 A2A 有什么区别？", badge:"框架 · MCP", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>MCP = AI 的 USB-C：让任意 AI 应用统一对接外部工具/数据，与模型无关；三要素 Server⇄stdio⇄Client</strong></div>
+      <ul>
+        <li><strong>三要素</strong>：Server（暴露工具，docstring 即描述）⇄ stdio 管道 ⇄ Client（发现+调用）</li>
+        <li><strong>写法</strong>：<code class="inline">@mcp.tool()</code> 注册函数，函数 docstring 决定 LLM 调不调；Client 用 <code class="inline">MultiServerMCPClient</code> 动态发现</li>
+        <li><strong>坑</strong>：MCP 工具只有 async（<code class="inline">_arun</code>），Client 端必须全程 async/await</li>
+        <li><strong>A2A vs MCP</strong>：MCP 管"工具"（Agent→工具，纵向）；A2A 管"智能体互联"（Agent→Agent，横向，跨公司才用）</li>
+      </ul>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">MCP 与 A2A 的本质区别是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>MCP 管智能体互联，A2A 管工具</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>MCP 管工具（纵向），A2A 管智能体互联（横向）</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>两者是同一个东西的两种叫法</div>
+        </div>
+        <div class="quiz-answer">✅ MCP=Agent→工具（纵向）；A2A=Agent→Agent（横向）</div>
+      </div>` },
+    { id:"k9", q:"F9. LangGraph 状态图四要素？", badge:"框架 · LangGraph", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>LangChain = 工具箱（零件），LangGraph = 流水线图纸（流程骨架/状态/循环/分支）；四要素 State / Node / Edge / ConditionalEdge</strong></div>
+      <ul>
+        <li><strong>State</strong>：黑板格式，TypedDict + reducer 合并更新</li>
+        <li><strong>Node</strong>：处理函数（state → dict）</li>
+        <li><strong>Edge</strong>：固定边；<strong>ConditionalEdge</strong>：路由函数选分支</li>
+        <li><strong>进阶</strong>：Checkpointing（<code class="inline">MemorySaver</code>/<code class="inline">SqliteSaver</code> 持久化状态，崩了能恢复）；HITL <code class="inline">interrupt()</code>/<code class="inline">resume()</code> 关键步暂停等人确认</li>
+      </ul>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">LangGraph 里 ConditionalEdge 的作用是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>根据路由函数结果选下一步走哪条边</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>永远顺序执行，不分支</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>只负责存记忆</div>
+        </div>
+        <div class="quiz-answer">✅ ConditionalEdge = 路由函数选分支（如有没有 tool_calls → 走工具 or 结束）</div>
+      </div>` },
+    ]},
+  { name:"概念速记", items:[
+    { id:"k10", q:"F10. Prompt 工程四技巧？", badge:"概念 · Prompt", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>四技巧：System 定人设定规则 / Few-shot 给示例照着学 / CoT 一步步想 / 负面示例告诉它别做什么</strong></div>
+      <ul>
+        <li><strong>System Prompt</strong>：定人设/定规则（"只依据资料答，没有就说不知道"）</li>
+        <li><strong>Few-shot</strong>：给 2-3 个示例，AI 照着学格式</li>
+        <li><strong>Chain of Thought</strong>："一步步想"让推理更稳</li>
+        <li><strong>负面示例</strong>：告诉它"不要做 X"有时比"要做 Y"更清晰</li>
+      </ul>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">CoT（思维链）的核心作用是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>缩短模型的输出长度</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>让模型一步步推理，输出更稳</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>让模型输出固定 JSON 格式</div>
+        </div>
+        <div class="quiz-answer">✅ CoT = "一步步想"，多步推理任务更稳；结构化输出靠 Pydantic parser + 低温</div>
+      </div>` },
+    { id:"k11", q:"F11. 概念模式速记（面试加分）", badge:"概念 · 模式", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>一张表记住：CoT/ToT/GoT、Supervisor、Rerank、Hybrid、Checkpointing、HITL、Lost in the Middle</strong></div>
+      <table class="cmp"><thead><tr><th>概念</th><th>一句话</th></tr></thead><tbody>
+        <tr><td>CoT / ToT / GoT</td><td>规划三兄弟：分步想 / 多路径+回溯 / 思维可合并</td></tr>
+        <tr><td>Supervisor 多智能体</td><td>一个调度 LLM 派活，worker 干完回摘要不污染主窗口</td></tr>
+        <tr><td>Rerank 重排序</td><td>向量召回 top-N 后，再用精排模型重排提升精度</td></tr>
+        <tr><td>Hybrid 检索</td><td>本地私有库 + 网页搜索同时查，合并去重</td></tr>
+        <tr><td>Checkpointing</td><td>图状态持久化，崩了能恢复 / 多轮可续</td></tr>
+        <tr><td>Human-in-the-loop</td><td>关键步骤暂停等人确认（如敏感操作前）</td></tr>
+        <tr><td>Lost in the Middle</td><td>上下文中间段记得最差 → 关键信息放首尾</td></tr>
+        <tr><td>上下文腐蚀</td><td>上下文越长回忆越差，是有限资源 → 靠记忆压缩</td></tr>
+        <tr><td>LlamaIndex vs LangChain</td><td>重检索选 LlamaIndex，重 Agent 选 LangChain</td></tr>
+        <tr><td>搜索 vs RAG</td><td>搜索返回文档，RAG 返回模型综合的答案</td></tr>
+      </tbody></table>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">Rerank（重排序）解决什么问题？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>向量库存不下数据</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>召回后精度不够，用精排模型重排 top-N 提升精度</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>模型回复太慢</div>
+        </div>
+        <div class="quiz-answer">✅ Rerank = 召回后精排；Hybrid = 本地+网页合并；两者常组合成生产标配</div>
+      </div>` },
+    ]},
+  { name:"LLM 调用层", items:[
+    { id:"k12", q:"F12. DeepSeek API 怎么调？messages 是什么？", badge:"框架 · LLM 调用", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>client.chat.completions.create(model=, messages=[{role,content}]) → response.choices[0].message.content；messages 每次都把历史原样发回去，AI 才"记得"</strong></div>
+      <ul>
+        <li><strong>三角色</strong>：<code class="inline">system</code>=人设/规则、<code class="inline">user</code>=你、<code class="inline">assistant</code>=AI 回复，别混</li>
+        <li><strong>model 名</strong>：deepseek-v4-flash（旧别名 deepseek-chat / deepseek-reasoner 已于 2026-07-24 停用，调用会直接报错）</li>
+        <li><strong>兼容</strong>：DeepSeek 兼容 OpenAI SDK，写法通用，只改 base_url</li>
+      </ul>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+# 模拟 DeepSeek API 调用：messages 每次都把历史原样发回，AI 才"记得"
+def fake_api(messages):
+    return {"role": "assistant", "content": "收到，我记住了"}
+
+history = [
+    {"role": "system", "content": "你是运维助手"},
+    {"role": "user", "content": "帮我看看日志"},
+]
+history.append(fake_api(history))          # 第一轮回复进历史
+history.append({"role": "user", "content": "继续"})
+history.append(fake_api(history))          # 第二轮带着全部历史调
+
+print(f"最终发给模型的 messages 共 {len(history)} 条：")
+for m in history:
+    print(f"  [{m['role']:9}] {m['content']}")
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">messages 里的 system 角色是干嘛的？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>定人设/定规则，约束 AI 怎么答</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>存放用户上传的文件</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>设置 API 的调用次数上限</div>
+        </div>
+        <div class="quiz-answer">✅ system 定人设/规则；多轮对话靠每次把历史 messages 原样发回</div>
+      </div>` },
+    { id:"k13", q:"F13. 流式输出 + temperature 怎么用？", badge:"框架 · LLM 调用", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>stream=True 打字机效果：循环收 chunk.choices[0].delta.content；temperature 0=稳、1=飘，结构化输出务必调低</strong></div>
+      <ul>
+        <li><strong>流式</strong>：<code class="inline">stream=True</code>，for chunk 循环逐字打印——前端体验的关键</li>
+        <li><strong>temperature</strong>：0 = 最确定（答题/JSON 用）；1 = 更发散（创意用）；结构化输出调低 JSON 才稳</li>
+        <li><strong>易混</strong>：流式 ≠ 非流式字段不同——流式读 delta.content，非流式读 message.content</li>
+      </ul>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+# 模拟 stream=True 的流式输出：逐 chunk 打印（打字机效果）
+def fake_stream(text, size=2):
+    for i in range(0, len(text), size):
+        yield text[i:i + size]
+
+for chunk in fake_stream("结构化输出请把 temperature 调低到 0 附近"):
+    print(chunk, end="", flush=True)
+print()
+print("（真实代码里是 for chunk in response: 读 delta.content）")
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">要让 LLM 稳定输出合法 JSON，temperature 应该？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>调到 1 更发散</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>调低接近 0 更确定</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>不改也行，JSON 和 temperature 无关</div>
+        </div>
+        <div class="quiz-answer">✅ 结构化输出务必低温（接近 0），输出才稳定；创意场景才拉高</div>
+      </div>` },
+    ]},
+  { name:"UI 层", items:[
+    { id:"k14", q:"F14. Streamlit 聊天怎么做？最大的坑是什么？", badge:"框架 · Streamlit", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>几行 Python 出 Web 页面，st.chat_message 做聊天；最坑：每次交互整脚本重跑，状态必须存 st.session_state</strong></div>
+      <ul>
+        <li><strong>骨架</strong>：<code class="inline">st.session_state</code> 存 messages 历史 → for 循环 <code class="inline">st.chat_message</code> 渲染 → <code class="inline">st.chat_input</code> 收问题</li>
+        <li><strong>为什么存 session_state</strong>：Streamlit 每次交互整脚本重跑，局部变量全丢；session_state 跨重跑保留</li>
+        <li><strong>Chainlit</strong>：ChatGPT 风格 UI 开箱即用，流式+工具调用可视化，做对话产品更省事</li>
+      </ul>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+# 模拟 Streamlit 整脚本重跑机制：普通变量丢，session_state 保留
+class SessionState(dict):
+    def __getattr__(self, k): return self[k]
+
+st = SessionState(messages=[])     # 模拟 st.session_state
+
+def rerun(user_input):             # 每次交互 = 脚本从头跑一遍
+    st.messages.append({"role": "user", "content": user_input})
+    print(f"历史条数（存在 session_state）：{len(st.messages)}")
+
+rerun("你好")
+rerun("在吗")
+print("两次交互的消息都保留住了，没被重跑清掉")
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">Streamlit 聊天历史为什么要存 session_state？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>session_state 能加速模型推理</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>每次交互整脚本重跑，普通变量会丢</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>不存会被多用户看到</div>
+        </div>
+        <div class="quiz-answer">✅ Streamlit 整脚本重跑机制 → 状态必须存 st.session_state 才跨交互保留</div>
+      </div>` },
+    ]},
+  { name:"地基层 · 工具链", items:[
+    { id:"k15", q:"F15. Git / venv / pytest / SQLite / .env 各管什么？", badge:"地基 · 工具", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>一张表记住：Git 备份+协作 / venv 隔离环境 / pytest 自动验证 / SQLite 结构化存储 / .env 密钥管理</strong></div>
+      <table class="cmp"><thead><tr><th>工具</th><th>一句话</th><th>必会点</th></tr></thead><tbody>
+        <tr><td>Git / GitHub</td><td>代码备份+协作</td><td>add/commit/push；.gitignore 忽略 venv/.env/__pycache__</td></tr>
+        <tr><td>venv / pip</td><td>隔离环境+装依赖</td><td>python -m venv venv；pip freeze &gt; requirements.txt</td></tr>
+        <tr><td>pytest</td><td>自动验证纯函数</td><td>assert 写用例，改代码跑一次就知道坏没坏</td></tr>
+        <tr><td>SQLite / SQL</td><td>结构化存储</td><td>? 占位符防注入；增删改后必须 conn.commit()</td></tr>
+        <tr><td>.env / dotenv</td><td>密钥不写死代码</td><td>load_dotenv + os.getenv；Key 永不上 GitHub</td></tr>
+      </tbody></table>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+# SQLite：增删改后必须 commit() 才真正落盘
+import sqlite3
+conn = sqlite3.connect(":memory:")
+cur = conn.cursor()
+cur.execute("CREATE TABLE t(x)")
+cur.execute("INSERT INTO t VALUES (1)")
+print("未 commit 前，同一连接内能查到：",
+      cur.execute("SELECT * FROM t").fetchall())
+conn.rollback()   # 模拟"没 commit 就断开"
+print("回滚后（相当于没 commit），数据没了：",
+      cur.execute("SELECT count(*) FROM t").fetchone()[0])
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">SQLite 增删改后忘了 conn.commit() 会怎样？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>直接报语法错误</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>数据没真正落盘，重启就丢</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>会自动提交，没影响</div>
+        </div>
+        <div class="quiz-answer">✅ 增删改必须 commit() 才落盘；查询不用。API Key 永不上 GitHub（.env 进 .gitignore）</div>
+      </div>` },
+    ]},
+  { name:"多智能体", items:[
+    { id:"k16", q:"F16. Supervisor 多智能体怎么编排？", badge:"框架 · 多Agent", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>Supervisor = 一个调度 LLM 派活，worker 干完回摘要不污染主窗口（DeepResearch 同款）；企业场景 = 分析→检索→执行→审核→报告</strong></div>
+      <ul>
+        <li><strong>模式</strong>：supervisor 读任务 → 派给 specialist worker → 收摘要 → 再决策下一个</li>
+        <li><strong>好处</strong>：各 worker 上下文隔离，主窗口不被中间过程刷屏；规模可控（不做企业超级平台）</li>
+        <li><strong>落地形态</strong>（企业场景 AI 任务自动化）：分析 Agent → 检索 Agent → 执行 Agent → 审核 Agent → 生成报告，每步一个 Agent 各司其职</li>
+      </ul>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+# 模拟 Supervisor 多智能体：调度者派活，worker 回摘要
+def supervisor(task):
+    workers = [
+        ("分析Agent",   lambda: "分析：磁盘 IO 高"),
+        ("检索Agent",   lambda: "检索：手册第 3 章"),
+        ("执行Agent",   lambda: "执行：清理缓存"),
+        ("审核Agent",   lambda: "审核：通过，风险低"),
+    ]
+    report = []
+    for name, work in workers:
+        print(f"[Supervisor] 派给 {name}")
+        summary = work()
+        report.append(f"{name}: {summary}")
+        print(f"  {name} 回摘要：{summary}")
+    print("最终报告：", " -> ".join(report))
+
+supervisor("处理磁盘告警")
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">Supervisor 模式里 worker 完成后返回什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>把全部中间过程刷进主窗口</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>只回摘要，由 supervisor 决定下一步</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>直接结束整个任务</div>
+        </div>
+        <div class="quiz-answer">✅ worker 回摘要不污染主窗口；supervisor 派活+收摘要+再决策</div>
+      </div>` },
+    ]},
+  { name:"前端 React", items:[
+    { id:"k17", q:"F17. React 学到的核心是什么？", badge:"前端 · React", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>组件 = 函数 + JSX；状态用 useState；数据单向流动 props；异步用 fetch；LLM 流式用 ReadableStream 逐块渲染</strong></div>
+      <ul>
+        <li><strong>组件化</strong>：页面拆成小组件（函数 + JSX），复用和改起来都方便</li>
+        <li><strong>状态</strong>：useState 管理组件状态；改状态触发重新渲染（不是手动改 DOM）</li>
+        <li><strong>数据流</strong>：父组件通过 props 传给子组件，单向流动</li>
+        <li><strong>流式响应</strong>：fetch 拿到 Response.body（ReadableStream），循环读 chunk 逐块 append 到界面——打字机效果</li>
+      </ul>
+      <pre class="code">// React 核心三件：组件函数 + useState + props（JS 示例，理解即可）
+function Chat() {
+  const [messages, setMessages] = useState([]);   // 状态：改它触发重渲染
+  const [text, setText] = useState("");
+
+  async function send() {
+    setMessages([...messages, { role: "user", content: text }]);
+    const res = await fetch("/api/chat", { method: "POST",
+        body: JSON.stringify({ text }) });
+    const reader = res.body.getReader();          // 流式读 LLM 回复
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      setMessages((m) => [...m, { role: "assistant", content: decode(value) }]);
+    }
+  }
+  return &lt;ul&gt;{messages.map((m) =&gt; &lt;li&gt;{m.content}&lt;/li&gt;)}&lt;/ul&gt;;
+}</pre>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">React 里改状态触发界面更新靠什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>手动操作 document.getElementById</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>setState 触发组件重新渲染</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>刷新整个浏览器页面</div>
+        </div>
+        <div class="quiz-answer">✅ 声明式：setState → 自动重新渲染；流式输出靠 ReadableStream 逐块 append</div>
+      </div>` },
+    ]},
+  { name:"工程化 Docker", items:[
+    { id:"k18", q:"F18. Docker / Compose 核心概念？", badge:"工程 · Docker", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>Docker = 把环境打包成镜像、容器一键起；多阶段构建缩小镜像；Compose 编排多容器；Nginx 反代前端</strong></div>
+      <ul>
+        <li><strong>多阶段构建</strong>：build 阶段装依赖编译 → runtime 阶段只拷产物，镜像小、无源码</li>
+        <li><strong>Compose</strong>：一个 yml 编排多个服务（backend/frontend/db），volumes 持久化数据 + env 注入配置</li>
+        <li><strong>Nginx</strong>：托管前端静态文件 + 反向代理 /api 到后端</li>
+        <li><strong>易混</strong>：镜像（模板）vs 容器（运行实例）；数据要落盘必须挂 volumes，否则容器删了数据没</li>
+      </ul>
+      <pre class="code"># Docker 多阶段构建：build 装依赖 → runtime 只拷产物
+FROM python:3.12 AS build
+COPY requirements.txt .
+RUN pip install --prefix=/opt/app -r requirements.txt
+
+FROM python:3.12-slim
+COPY --from=build /opt/app /usr/local
+COPY app/ /app/
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Compose 编排多容器 + volumes 持久化 + env 注入
+services:
+  backend:
+    build: ./backend
+    environment:
+      - DATABASE_HOST=db
+    volumes:
+      - ./outputs:/app/outputs
+  db:
+    image: postgres:16</pre>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">Docker 多阶段构建主要解决什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>让容器支持 GPU</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>最终镜像只留运行产物，又小又安全</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>加快 LLM 推理速度</div>
+        </div>
+        <div class="quiz-answer">✅ 多阶段 = 编译环境与运行环境分离，镜像小；数据持久化必须挂 volumes</div>
+      </div>` },
+    ]},
+  { name:"按项目回顾", items:[
+    { id:"k19", q:"F19. project1~5 各学了什么？（项目回顾表）", badge:"回顾 · 项目", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>project1~4 学"单个技术怎么用"，project5 学"怎么缝成一个能上线的产品"</strong></div>
+      <table class="cmp"><thead><tr><th>项目</th><th>框架/技术</th><th>做了什么 + 亮点</th></tr></thead><tbody>
+        <tr><td>project1-smart-qa</td><td>RAG + Streamlit + ChromaDB</td><td>RAG 四步完整实现 + 上传文档问答</td></tr>
+        <tr><td>project2-equipment-ops</td><td>RAG + Agent + 3σ + 结构化JSON</td><td>异常检测 + 黑盒 create_agent；最亮坑：3σ 小样本失效 → 改固定阈值</td></tr>
+        <tr><td>project3-langgraph</td><td>LangGraph + MCP + 记忆</td><td>手写 StateGraph 拆黑盒 + 工具循环 + Checkpoint + HITL</td></tr>
+        <tr><td>project4-ops-research-agent</td><td>gpt-researcher</td><td>临摹上游零改动 + 构造后注入 + 4 扩展点 + 19 pytest</td></tr>
+        <tr><td>project5-ai-knowledge-base</td><td>FastAPI + SQLAlchemy + Chroma + LangGraph + Docker</td><td>全栈服务 + 两条数据流 + 11 pytest；第一个能上线的产品</td></tr>
+      </tbody></table>
+      <pre class="code"># 项目速记（面试按这个串）
+project1: RAG 四步      -> 会检索
+project2: Agent 黑盒    -> 会决策（3σ 小样本失效 -> 固定阈值）
+project3: StateGraph    -> 会编排（手写拆黑盒）
+project4: 构造后注入    -> 会改框架（上游零改动）
+project5: 全栈缝合      -> 会上线（FastAPI+Chroma+LangGraph+Docker）</pre>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">project2 最亮的坑是什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>ChromaDB 装不上</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>3σ 小样本失效（5 条样本把均值/σ 拉偏）→ 改业务固定阈值表</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>Streamlit 不支持聊天</div>
+        </div>
+        <div class="quiz-answer">✅ 3σ 小样本会失效 → 业务场景用固定阈值更可靠；project1~4 单点技术，project5 全栈缝合</div>
+      </div>` },
+    ]},
+  ]},
+  { name:"项目5 · AI 知识库平台", groups:[
+  { name:"FastAPI 入门", items:[
+    { id:"q0-1", q:"Q0-1. FastAPI 是什么？为什么用它？", badge:"开头", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>FastAPI=把你的 Python 函数变成 HTTP 接口；自动文档 / 类型校验 / 原生 async / 依赖注入</strong></div>
+      <p><strong>是什么</strong>：Python 的 Web 框架——把你的 Python 函数变成 HTTP 接口。类比餐厅服务员：它接单（接收请求）、上菜（返回响应），你的函数是厨房。</p>
+      <p><strong>为什么用它</strong>（对比 Flask/Django）：</p>
+      <ul>
+        <li>自动生成 API 文档（访问 <code class="inline">/docs</code> 就有交互式文档）</li>
+        <li>类型提示 + 自动校验参数（pydantic）</li>
+        <li>原生异步（async，适合 LLM/流式响应）</li>
+        <li>自带依赖注入（Depends）——就是模块 B5 说的 DI</li>
+      </ul>
+      <p><strong>SDK 是什么</strong>：工具包。别人封装好的一堆类/函数，<code class="inline">import</code> 直接用的工具箱（微信 SDK = 腾讯给的"发消息、查用户"工具包）。FastAPI 也算一种"Web 工具包"。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">FastAPI 的 Depends 是什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>数据库连接池</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>依赖注入——接口声明"我要什么"</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>前端组件</div>
+        </div>
+        <div class="quiz-answer">✅ 自带依赖注入 DI，就是模块 B5 说的 DI</div>
+      </div>` },
+    { id:"q0-2", q:"Q0-2. project5 项目结构", badge:"开头", html:`
+      <pre class="code">project5-ai-knowledge-base/
+├── backend/                    # 后端（FastAPI）
+│   ├── .venv/                  # 虚拟环境（依赖隔离）
+│   ├── app/
+│   │   ├── main.py             # 入口：创建 app，注册路由/中间件/异常
+│   │   ├── middleware.py       # CORS + 请求日志中间件（全局安检门）
+│   │   ├── exceptions.py       # 业务异常（AppException 家族）
+│   │   ├── exception_handlers.py # 异常翻译（handler 注册）
+│   │   ├── security.py         # JWT 认证（get_current_user，DI 注入）
+│   │   ├── db/
+│   │   │   ├── main.py         # SessionDep（数据库会话，DI 注入）
+│   │   │   ├── models.py       # SQLAlchemy 模型（表结构）
+│   │   │   ├── vector_store.py # Chroma 向量库（RAG 检索）
+│   │   │   └── checkpointer.py # LangGraph 会话记忆
+│   │   ├── threads/            # 会话模块（routes / service / repository / schemas）
+│   │   ├── documents/          # 文档模块（同上分层）
+│   │   └── chat/               # 聊天模块（SSE 流式）
+│   ├── tests/                  # pytest 测试
+│   └── requirements.txt
+├── frontend/                   # React 前端（Vite）
+└── docker-compose.yml          # 一键起后端+前端</pre>
+      <div class="box note"><div class="box-title">怎么读这张图</div>从上往下：<strong>入口 → 横切能力（中间件/异常/认证）→ 基础设施（数据库/向量库/记忆）→ 业务模块（threads/documents/chat）</strong>。每层各司其职，改一处不影响别处。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">backend/app/security.py 负责什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>数据库模型</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>JWT 认证（get_current_user，DI 注入）</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>CORS 中间件</div>
+        </div>
+        <div class="quiz-answer">✅ security.py = JWT 认证；middleware.py 才是 CORS+日志</div>
+      </div>` },
+  ]},
+  { name:"全局异常处理", items:[
+    { id:"a0", q:"A0. Exception / HTTPException / AppException 的关系？", badge:"模块 A", html:`
+      <pre class="code">Exception（Python 内置，所有异常的老祖宗）
+├── HTTPException（FastAPI 的，HTTP 层用）
+└── AppException（你的业务异常基类）
+    └── NotFoundError / PermissionDeniedError</pre>
+      <p>继承的实际作用：① 子类复用基类的构造函数（不用重写）② handler 注册在基类上，子类抛出的都会被接住（多态）③ 子类只定 status_code 差异化。</p>
+      <div class="box tip"><div class="box-title">关键设计</div>"AppException 不继承 HTTPException"是刻意的：<strong>业务层不知道 HTTP 的存在</strong>。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">为什么 AppException 不继承 HTTPException？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>继承会直接报错</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>业务层不该知道 HTTP 的存在</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>只是为了代码更短</div>
+        </div>
+        <div class="quiz-answer">✅ 分层：业务层说"坏了"，翻译成 404/500 是 handler 的职责</div>
+      </div>` },
+    { id:"a1", q:"A1. status_code 放基类还是子类？", badge:"模块 A", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>status_code 放子类（404/403 语义各不同），公共的 detail 放基类</strong></div>
+      <p>子类。404（没找到）和 403（没权限）语义不同，每个异常自己知道自己是几号错误；基类只放公共的消息 detail。</p>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+class AppException(Exception):
+    status_code = 500
+    detail = '服务出错'
+
+class NotFoundError(AppException):
+    status_code = 404
+    detail = '资源不存在'
+
+class PermissionDeniedError(AppException):
+    status_code = 403
+    detail = '没有权限'
+
+for cls in [NotFoundError, PermissionDeniedError, AppException]:
+    print(f'{cls.__name__:22s} status_code={cls.status_code}  detail={cls.detail}')
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">status_code 应该放在哪里？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>基类</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>子类（每个异常自己知道是几号错误）</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>handler 里写死</div>
+        </div>
+        <div class="quiz-answer">✅ 404/403 语义各不同放子类；公共的 detail 放基类</div>
+      </div>`
+ },
+    { id:"a2", q:"A2. 构造函数怎么设计？", badge:"模块 A", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>构造函数只收一个 detail 参数：super 传给父类 + self.detail 存一份</strong></div>
+      <p>只收一个 detail 参数，存起来并传给父类：</p>
+      <pre class="code">def __init__(self, detail: str):
+    super().__init__(detail)   # 让 print(e) 能看到消息
+    self.detail = detail       # 让 handler 取到消息</pre>
+      <p>子类不重写构造函数，只定 status_code。</p>
+
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">构造函数里 super().__init__(detail) 和 self.detail = detail 各为什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>两行完全冗余</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>print(e) 能看到消息 + handler 能取到消息</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>只有 print 需要</div>
+        </div>
+        <div class="quiz-answer">✅ 父类存消息让 print(e) 可见；self.detail 让 handler 取到</div>
+      </div>` },
+    { id:"a3", q:"A3. 为什么继承 Exception 而不是 HTTPException？", badge:"模块 A", html:`
+      <p>分层。业务层不该知道 HTTP 的存在（以后可能被命令行/定时任务复用）。业务层只抛业务异常，翻译成 HTTP 是 handler 的职责。</p>
+      <div class="box tip"><div class="box-title">一句话</div><strong>业务层说"坏了"，HTTP 层负责"翻译成 404/500"</strong>。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">业务层抛异常后，谁负责翻译成 HTTP 状态码？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>service</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>handler</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>repository</div>
+        </div>
+        <div class="quiz-answer">✅ 业务层说"坏了"，HTTP 层 handler 翻译成 404/500</div>
+      </div>` },
+    { id:"a4", q:"A4. 完整闭环", badge:"模块 A", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>所有业务错误走同一条路：抛出 → 全局 handler 接住 → 翻译成 JSON → 返回</strong></div>
+      <pre class="code">service raise NotFoundError("Thread not found")
+  ↓ FastAPI 全局 handler 捕获
+  ↓ 返回 {"detail": "..."}，状态码 404</pre>
+      <p>好处：所有业务错误走同一条路，错误长相统一、日志统一。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">业务错误统一走的路径是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>每个接口自己 try/except</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>抛出 → 全局 handler 接住 → 翻译 JSON → 返回</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>直接返回 None</div>
+        </div>
+        <div class="quiz-answer">✅ 所有业务错误走同一条路，错误长相统一、日志统一</div>
+      </div>` },
+    { id:"a5", q:"A5. status_code 放子类，翻译器里怎么派上用场？", badge:"模块 A", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>handler 用 exc.status_code + exc.detail 一步拿到，不用 if/else 判断类型</strong></div>
+      <p><code class="inline">exc.status_code</code> 一句拿到，不用 if/else 判断异常类型。写 handler 时一个通用函数搞定所有业务异常。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">handler 怎么拿到状态码？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>用 isinstance 逐类判断</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>exc.status_code 一句拿到，不用 if/else</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>从请求 URL 里读</div>
+        </div>
+        <div class="quiz-answer">✅ 子类定 status_code，handler 一个通用函数搞定</div>
+      </div>` },
+    { id:"a6", q:"A6. AppException 之外的意外异常（比如数据库炸了），FastAPI 怎么处理？", badge:"模块 A", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>意外异常默认 500，目前够用；统一美化可给 Exception 注册兜底 handler + 记日志</strong></div>
+      <p>默认返回 500（Internal Server Error）。这个目前够用，统一美化留到后续（可以单独给 Exception 注册一个兜底 handler + 记日志）。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">AppException 之外的意外异常（如数据库炸了）默认返回？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>404</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>500</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>400</div>
+        </div>
+        <div class="quiz-answer">✅ 默认 500 Internal Server Error，目前够用</div>
+      </div>` },
+    { id:"a7", q:"A7. raise 之后到浏览器收到 404，完整四步（复盘纠错）", badge:"模块 A", html:`
+      <p>容易把"抛出方"和"接住方"搞混，记清角色：</p>
+      <ul>
+        <li><strong>service = 抛出方</strong>：<code class="inline">raise NotFoundError(...)</code>，只管抛</li>
+        <li><strong>handler = 接住方</strong>：<code class="inline">@app.exception_handler(AppException)</code> 注册的函数捕获它</li>
+        <li><strong>翻译在 handler 内部</strong>：<code class="inline">exc.status_code</code> 取 404、<code class="inline">exc.detail</code> 取消息</li>
+        <li><strong>返回</strong>：<code class="inline">JSONResponse(content={"detail": exc.detail}, status_code=exc.status_code)</code> 交回 FastAPI 发给客户端</li>
+      </ul>
+      <div class="box tip"><div class="box-title">一句话</div><strong>service 抛 → handler 接住 → 用 status_code + detail 组装 JSON → 返回给客户端</strong>。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">raise 之后谁负责"接住"？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>service 自己</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>全局 exception_handler</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>路由函数</div>
+        </div>
+        <div class="quiz-answer">✅ service 抛 → handler 接住 → 用 status_code+detail 组装 JSON → 返回</div>
+      </div>` },
+  ]},
+  { name:"中间件", items:[
+    { id:"b1", q:"B1. 为什么需要中间件？", badge:"模块 B", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>一次编写、全局生效——像门卫，请求进出都经过</strong></div>
+      <p>要"每个请求都记日志"，routes 里逐端点写会重复。中间件一次编写、全局生效——像门卫，请求进/出都经过它。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">中间件的好处是什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>每个接口都要写一遍</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>一次编写、全局生效</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>只处理 POST 请求</div>
+        </div>
+        <div class="quiz-answer">✅ 像门卫，请求进/出都经过它，一次编写全局生效</div>
+      </div>` },
+    { id:"b2", q:"B2. 为什么要用 yield 版而不是 dispatch 版？", badge:"模块 B", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>chat 是 SSE 流式 → 必须 yield 版，dispatch 会整体缓冲让用户干等</strong></div>
+      <p>chat 接口是 SSE 流式响应。<code class="inline">dispatch</code> 版会把流式输出整体缓冲，用户等半天才看到；<code class="inline">yield</code> 版让响应逐段流过去，体验不断。项目真实需求反推技术选型。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">为什么用 yield 版而不是 dispatch 版？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>yield 版跑得更快</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>chat 是 SSE 流式，dispatch 会整体缓冲</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>dispatch 已废弃</div>
+        </div>
+        <div class="quiz-answer">✅ dispatch 会把流式输出整体缓冲，用户干等；yield 让响应逐段流</div>
+      </div>` },
+    { id:"b3", q:"B3. 洋葱模型怎么理解？", badge:"模块 B", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>call_next 前=路由处理前，之后=响应返回后，形成进→处理→出三层</strong></div>
+      <p><code class="inline">call_next</code> 前的代码在路由处理前执行，之后的在响应返回后执行，形成"进→处理→出"三层。</p>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+# yield 版中间件的洋葱结构：请求先进后出，响应后进先出
+def middleware_1(next_layer):
+    def wrapped(req):
+        print('① M1 请求前（日志/鉴权）')
+        resp = next_layer(req)
+        print('⑤ M1 响应后（补响应头）')
+        return resp
+    return wrapped
+
+def middleware_2(next_layer):
+    def wrapped(req):
+        print('② M2 请求前')
+        resp = next_layer(req)
+        print('④ M2 响应后')
+        return resp
+    return wrapped
+
+def route(req):                     # 最内层 = 路由处理器
+    print('③ 路由处理中...')
+    return 'Hello!'
+
+app = middleware_1(middleware_2(route))
+print('最终响应:', app('GET /threads'))
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">call_next 之前的代码什么时候执行？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>响应返回后</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>路由处理前</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>请求到达服务器前</div>
+        </div>
+        <div class="quiz-answer">✅ 进→处理→出三层：call_next 前=处理前，之后=响应返回后</div>
+      </div>`
+ },
+    { id:"b4", q:"B4. 重复定义 register_middleware 会怎样？", badge:"模块 B", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>重复定义 register_middleware 会覆盖，CORS 丢失；合并进同一个函数</strong></div>
+      <p>后定义的函数覆盖前一个，CORS 会丢。要合并进同一个函数，不要写两个同名的。</p>
+
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">重复定义 register_middleware 会怎样？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>直接报错</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>后定义覆盖前一个，CORS 丢失</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>两个都生效</div>
+        </div>
+        <div class="quiz-answer">✅ 同名函数会覆盖，CORS 会丢，要合并进同一个函数</div>
+      </div>` },
+    { id:"b5", q:"B5. 中间件 vs DI 的本质区别？认证到底是哪种？（复盘纠错）", badge:"模块 B", html:`
+      <ul>
+        <li>中间件 = <strong>全局安检门</strong>：每个请求无条件经过（CORS、请求日志）</li>
+        <li>DI = <strong>按需注入</strong>：接口声明"我要什么"（SessionDep、get_current_user）</li>
+        <li>深层原因：<strong>中间件不知道接口要什么</strong>，它只对"所有请求"做横切处理；<strong>DI 是接口自己声明</strong>要什么</li>
+        <li><strong>认证（get_current_user）在 project5 里是 DI，不是中间件</strong>——因为它是按需的（只有要用户信息的接口才用），不是全站拦截</li>
+      </ul>
+      <div class="box tip"><div class="box-title">判断口诀</div><strong>全局横切 → 中间件；按需组装 → DI</strong>。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">project5 的认证（get_current_user）用的是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>中间件</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>DI（按需注入）</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>全局装饰器</div>
+        </div>
+        <div class="quiz-answer">✅ 认证是按需的（只要用户信息的接口才用）→ DI；全局横切才用中间件</div>
+      </div>` },
+    { id:"b6", q:"B6. CORS 是什么？为什么要有 CORS 中间件？", badge:"模块 B", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>不同端口=跨域，浏览器默认拦截；CORS 中间件=告诉浏览器哪些来源允许访问</strong></div>
+      <p>CORS（跨域资源共享）= 浏览器的安全机制。前端跑在 <code class="inline">localhost:5173</code>，后端在 <code class="inline">localhost:8000</code>——<strong>不同端口 = 跨域</strong>，浏览器默认拦截前端发的请求。CORS 中间件的作用：告诉浏览器"这些来源（Origin）允许访问"，从而放行。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">为什么需要 CORS 中间件？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>防止 SQL 注入</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>5173 和 8000 不同端口=跨域，浏览器默认拦截</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>给请求加密</div>
+        </div>
+        <div class="quiz-answer">✅ 不同端口=跨域，浏览器默认拦截；CORS 告诉浏览器哪些来源放行</div>
+      </div>` },
+    { id:"b7", q:"B7. 洋葱模型里的 yield 和路由里的 async 是什么关系？", badge:"模块 B", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>yield 管响应逐段流，async 管 IO 并发——SSE 需要两者配合</strong></div>
+      <p>两者不冲突：yield 中间件处理"响应对象"的逐段流动，async 路由处理"IO 操作"的并发。SSE 流式响应需要两者配合。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">yield 和 async 是什么关系？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>完全一样的东西</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>yield 管响应逐段流，async 管 IO 并发，SSE 要配合</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>互斥，只能用一个</div>
+        </div>
+        <div class="quiz-answer">✅ 一个管"响应对象"逐段流动，一个管"IO 操作"并发</div>
+      </div>` },
+  ]},
+  { name:"三层架构", items:[
+    { id:"c1", q:"C1. routes / service / repository 各管什么？", badge:"模块 C", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>routes 管 HTTP 长相（接线）；service 管业务规则；repository 管写 SQL/ORM</strong></div>
+      <ul>
+        <li>routes：HTTP 长相（URL、状态码、响应模型），只接线</li>
+        <li>service：业务规则（判断、编排、事务）</li>
+        <li>repository：数据访问（写 SQL/ORM：select、get、add、commit）</li>
+      </ul>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">repository 层的职责是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>定 HTTP 状态码</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>写 SQL/ORM 数据访问</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>判断业务规则</div>
+        </div>
+        <div class="quiz-answer">✅ routes 管 HTTP 长相、service 管业务规则、repository 管数据访问</div>
+      </div>` },
+    { id:"c2", q:"C2. 怎么判断一段代码该放哪层？（判别法）", badge:"模块 C", html:`
+      <div class="box note"><div class="box-title">判别法</div><strong>有 if + 决定 → service；写 SQL/ORM → repository。</strong></div>
+      <p>例："标题没变化就不用更新"这种业务判断 → service；<code class="inline">session.get</code> 这种查询写法 → repository。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">"标题没变化就不用更新"这种判断放哪层？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>repository</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>service</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>models</div>
+        </div>
+        <div class="quiz-answer">✅ 有 if + 决定 → service；写 SQL/ORM → repository</div>
+      </div>` },
+    { id:"c3", q:"C3. \"改标题\"请求完整链路", badge:"模块 C", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>改标题链路：routes → service（判断）→ repository（查询）→ 404 在 service</strong></div>
+      <pre class="code">routes 收到 PUT /threads/{id}
+  → 调 service.update_thread(...)
+      → 调 repository.get_thread_by_id()    ← "查"在 repository
+      → None → raise NotFoundError（404 在这）← "判断"在 service
+      → 改字段 + commit
+  → routes 转成响应模型返回</pre>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+# route -&gt; service -&gt; repository 简化链路
+db = {'101': ('alice', '线程A'), '202': ('bob', '线程B')}
+
+def repo_find_thread(tid):          # 数据层：只查数据，查不到返回 None
+    return db.get(tid)
+
+def service_get_thread(tid, user_id):
+    row = repo_find_thread(tid)
+    if row is None:
+        return None                 # 不存在 -&gt; 404（不暴露 ID 是否存在）
+    owner, title = row
+    if owner != user_id:
+        return None                 # 别人的线程 -&gt; 也当"查不到"
+    return title
+
+def route(tid, user_id):            # 路由层：只收参数、转发
+    return service_get_thread(tid, user_id)
+
+for tid in ['101', '202', '999']:
+    print(f'用户 alice 请求 {tid}:', route(tid, 'alice'))
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">改标题链路里 raise NotFoundError 发生在哪？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>repository</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>service</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>routes</div>
+        </div>
+        <div class="quiz-answer">✅ 查在 repository（返回 None），404 判断在 service</div>
+      </div>`
+ },
+    { id:"c4", q:"C4. 404 判断放哪层？", badge:"模块 C", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>404 判断在 service；repository 契约=查不到返回 None、不做决定</strong></div>
+      <p>service。repository 的契约是"查不到返回 None，不做决定"，它不懂 HTTP 语义；抛业务异常是 service 的职责。</p>
+
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">repository 的契约是什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>查不到抛 404</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>查不到返回 None，不做决定</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>查不到返回空字符串</div>
+        </div>
+        <div class="quiz-answer">✅ repository 不懂 HTTP 语义，抛业务异常是 service 的职责</div>
+      </div>` },
+  ]},
+  { name:"Postgres 数据库", items:[
+    { id:"d0", q:"D0. Postgres 是什么？是\"服务器\"吗？", badge:"模块 D", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>Postgres 是独立运行的数据库服务器程序，监听 5432 端口，docker-compose 的 postgres 服务就是它</strong></div>
+      <p>是。它是一个<strong>独立运行的数据库服务器程序</strong>：像后端一样是个常驻进程，监听 5432 端口，接收 SQL 请求，把数据存磁盘。docker-compose 里 postgres 服务起的就是它，<code class="inline">pgdata</code> 卷存它的数据文件。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">Postgres 是什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>一个 .db 文件</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>独立运行的数据库服务器程序，监听 5432 端口</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>Python 的一个库</div>
+        </div>
+        <div class="quiz-answer">✅ 独立常驻进程，像后端一样，docker-compose 的 postgres 服务就是它</div>
+      </div>` },
+    { id:"d1", q:"D1. SQLite vs Postgres 本质区别？", badge:"模块 D", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>SQLite=嵌入式文件库（自己抽屉）；Postgres=独立服务（银行）；并发/共享/硬指标→切</strong></div>
+      <ul>
+        <li>SQLite = <strong>嵌入式库</strong>：一个 .db 文件，你的程序直接读写（像自己抽屉里的账本）</li>
+        <li>Postgres = <strong>独立服务</strong>：一个进程，程序通过网络连它（像银行，自己管账本）</li>
+        <li>为什么切：并发弱 → 强；单文件 → 可多服务共享；硬指标要求真数据库</li>
+      </ul>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">为什么从 SQLite 切到 Postgres？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>SQLite 不能存数据</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>并发弱→强、可多服务共享、要硬指标</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>Postgres 完全免费</div>
+        </div>
+        <div class="quiz-answer">✅ SQLite=自己抽屉；Postgres=银行。并发/共享/硬指标→切</div>
+      </div>` },
+    { id:"d2", q:"D2. 密码为什么不能明文存？hash 是什么？", badge:"模块 D", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>hash=单向加密不可逆；注册存哈希、登录比哈希，列名用 password_hash 不存原文</strong></div>
+      <p>明文存 = 数据库泄露全部裸奔。hash = <strong>单向加密</strong>：密码 → 固定长度乱码，不可逆。验证时存哈希、比哈希：注册存 <code class="inline">hash(密码)</code>，登录把输入再哈希，两个哈希相等 = 密码对。列名用 <code class="inline">password_hash</code>（存哈希不存原文）。</p>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+import hashlib
+
+def hash_pw(pw, salt='s@lt-2026'):
+    return hashlib.sha256((salt + pw).encode()).hexdigest()
+
+h1 = hash_pw('123456')
+h2 = hash_pw('123456')
+print('同一密码两次哈希一致:', h1 == h2)
+print('密文:', h1)
+h3 = hash_pw('123457')
+print('密码差一位，哈希完全不同:', h1 != h3)
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">登录时怎么验证密码？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>把库里的哈希解密出来</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>把输入再哈希，和库里的哈希比</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>直接比对明文</div>
+        </div>
+        <div class="quiz-answer">✅ 哈希不可逆，只能再哈希比对；列名存 password_hash</div>
+      </div>`
+ },
+    { id:"d3", q:"D3. User 表设计要点（列约束入门）", badge:"模块 D", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>unique 防重名、String(n) 限长度、server_default 让数据库自动填时间</strong></div>
+      <ul>
+        <li><code class="inline">unique=True</code>：用户名不能重名（唯一约束）</li>
+        <li><code class="inline">String(50)</code> / <code class="inline">String(255)</code>：长度限制（哈希固定长度，255 够用）</li>
+        <li><code class="inline">server_default=func.now()</code>：数据库自动填时间，代码不用管</li>
+        <li>默认值两兄弟：<code class="inline">default=uuid.uuid4</code>（Python 侧）vs <code class="inline">server_default=func.now()</code>（数据库侧）</li>
+      </ul>
+
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">unique=True 的作用是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>字段不能为空</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>用户名不能重名</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>自动填默认值</div>
+        </div>
+        <div class="quiz-answer">✅ 唯一约束防重名；String(n) 限长度；server_default 自动填时间</div>
+      </div>` },
+    { id:"d4", q:"D4. Thread 加 user_id 外键是干嘛的？为什么 CASCADE？", badge:"模块 D", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>CASCADE=用户删了会话自动跟着删（防孤儿数据）；外键让数据库保证归属不破</strong></div>
+      <p>数据隔离：每个会话属于一个用户。<code class="inline">ForeignKey("users.id", ondelete="CASCADE")</code> 意思是——<strong>用户删除时，他的会话由数据库自动跟着删</strong>（级联）。如果不加，用户删了但会话还在，就成了"没主的孤儿数据"。外键的职责：<strong>数据库替你保证数据之间的归属关系不破</strong>，不用代码自己维护。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">ondelete="CASCADE" 是什么意思？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>有引用就禁止删除</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>用户删除时，他的会话由数据库自动跟着删</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>子记录外键置 NULL</div>
+        </div>
+        <div class="quiz-answer">✅ 删父时子记录自动跟着删，防孤儿数据</div>
+      </div>` },
+    { id:"d4-1", q:"D4.1 三种删除策略对比（实操演示过）", badge:"模块 D", html:`
+      <ul>
+        <li><strong>NO ACTION / RESTRICT</strong>：有子记录引用时禁止删父（报错 <code class="inline">is still referenced</code>）。要先清光子记录才能删父。适合"子记录是历史证据"的场景（如商品被历史订单引用）。</li>
+        <li><strong>CASCADE</strong>：删父时子记录自动跟着删。适合"子记录随主人消亡"的场景（如注销账号连会话一起清）。</li>
+        <li><strong>SET NULL</strong>：删父时子记录<strong>保留</strong>，外键列变 NULL（"孤儿"）。适合"子记录可以没爹但得活着"的场景（如评论在用户注销后保留，显示"已注销用户"）。<strong>前提：外键列必须允许 NULL</strong>（不能写 <code class="inline">nullable=False</code>）。</li>
+      </ul>
+      <div class="box tip"><div class="box-title">记忆</div><strong>NO ACTION = 儿子拦爹；CASCADE = 爹走儿随；SET NULL = 爹走了，儿子改孤儿</strong>。面试常考。实验结论：删父成功与否、子表是否连带变化，全由数据库管，代码不用写——实操三种都跑过，删父后子表分别是"报错 / 清空 / 变空值"。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">评论在用户注销后保留、显示"已注销用户"，该用哪种删除策略？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>CASCADE</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>SET NULL</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>RESTRICT</div>
+        </div>
+        <div class="quiz-answer">✅ 子记录可以没爹但得活着 → SET NULL；前提外键列允许 NULL</div>
+      </div>` },
+    { id:"d5", q:"D5. docker-compose 里 volumes 缩进写错会怎样？", badge:"模块 D", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>顶层卷和 services: 平级顶格；服务内的 volumes 才缩进 4 空格；docker compose config --quiet 校验</strong></div>
+      <p><code class="inline">pgdata:</code> 缩进错了会从"顶层卷"变成"假服务"，报 <code class="inline">services.frontend.volumes must be a array</code>。规则：<strong>顶层卷和 <code class="inline">services:</code> 平级（顶格）</strong>，服务内的 volumes 才是 4 空格。语法校验用 <code class="inline">docker compose config --quiet</code>。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">docker-compose 的顶层卷应该怎么写？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>缩进 4 空格</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>和 services: 平级（顶格）</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>缩进 8 空格</div>
+        </div>
+        <div class="quiz-answer">✅ 顶层卷和 services: 平级顶格；服务内的 volumes 才缩进 4 空格</div>
+      </div>` },
+    { id:"d6", q:"D6. venv 迁移后 pip.exe 报路径错怎么办？（踩坑）", badge:"模块 D", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>venv 拷贝后 pip.exe 路径错 → 改用 python -m pip install，走相对定位</strong></div>
+      <p><code class="inline">.venv</code> 从别的目录拷贝过来后，<code class="inline">pip.exe</code> 这个启动器里嵌着旧路径，装包会往不存在的地方写。<strong>改用 <code class="inline">python -m pip install xxx</code></strong> 就正常——它走 python 自己的相对定位，不依赖 pip.exe 里写死的路径。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">venv 拷贝后 pip.exe 报路径错，怎么解决？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>卸载重装 Python</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>改用 python -m pip install</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>改系统环境变量</div>
+        </div>
+        <div class="quiz-answer">✅ python -m pip 走相对定位，不依赖 pip.exe 里写死的旧路径</div>
+      </div>` },
+  ]},
+  { name:"用户 + JWT", items:[
+    { id:"e1", q:"E1. 为什么登录失败永远报同一句话？（防用户名枚举）", badge:"模块 E", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>永远报同一句「用户名或密码错误」，让攻击者无法分辨号存不存在（防枚举）</strong></div>
+      <p>两个分支：<code class="inline">用户名不存在</code> / <code class="inline">密码错误</code>，错误内容不同 = 给攻击者免费判断器（枚举）——报"不存在"说明可以换号试，报"密码错"说明号存在可爆破。<strong>统一改成都报 <code class="inline">用户名或密码错误</code>、同一状态码</strong>，攻击者拿到的永远是一句话，分不清是"没这号"还是"密码错"，就没了枚举依据。</p>
+      <p>"爆破" = 拿字典反复猜密码，前提是确认号存在，防的就是这第一步。防爆破主流手段是<strong>限流</strong>（同 IP 每分钟 N 次）和失败次数加锁（以后学）。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">为什么登录失败永远报同一句话？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>代码更短</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>防攻击者分辨号存不存在（防枚举）</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>用户体验更好</div>
+        </div>
+        <div class="quiz-answer">✅ 报"不存在"=给攻击者免费判断器；统一一句话没了枚举依据</div>
+      </div>` },
+    { id:"e2", q:"E2. bcrypt 哈希的两个函数", badge:"模块 E", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>hash_password=加密+加盐存库；verify_password=再哈希比对返回 bool；明文从不落库</strong></div>
+      <ul>
+        <li><code class="inline">hash_password(明文)</code>：加密 + 自动加盐，返回字符串存库（<code class="inline">encode</code>/<code class="inline">decode</code> 处理 bytes）</li>
+        <li><code class="inline">verify_password(明文, 库里的哈希)</code>：再哈希比对，返回 bool</li>
+      </ul>
+      <p>密码明文只在登录比对时"用一下"，从不落库。</p>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+import hashlib
+
+users = {'alice': ('s@lt-1', hashlib.sha256(b's@lt-1pw123').hexdigest())}
+
+def login(name, pw):
+    if name not in users:
+        return '用户名或密码错误'        # 关键：和密码错误同一句话，防枚举
+    salt, h = users[name]
+    ok = hashlib.sha256((salt + pw).encode()).hexdigest() == h
+    return '登录成功' if ok else '用户名或密码错误'
+
+for name, pw in [('alice', 'pw123'), ('alice', 'x'), ('bob', 'pw123')]:
+    print(f'{name} / {pw} -&gt; {login(name, pw)}')
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">hash_password(明文) 返回什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>bool 值</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>加密+自动加盐后的字符串，存库</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>明文密码</div>
+        </div>
+        <div class="quiz-answer">✅ 返回存库的哈希；verify_password(明文, 哈希) 才返回 bool</div>
+      </div>`
+ }
+  ]},
+  { name:"数据隔离", items:[
+    { id:"f1", q:"F1. 为什么\"查不到\"就是最好的权限控制？", badge:"模块 F", html:`
+      <p><code class="inline">get_thread_by_id</code> 的 WHERE 同时带 <code class="inline">id</code> 和 <code class="inline">user_id</code> 两个条件。A 拿 B 的会话 id 来查 → 命中 0 行 → 404。好处：</p>
+      <ul>
+        <li>不泄露"这个 id 存不存在"（攻击者探不出别人有哪些会话）</li>
+        <li>连"你有权吗"的 403 都不用发——直接当不存在，省一次判断</li>
+      </ul>
+      <div class="box tip"><div class="box-title">口诀</div><strong>查不到 = 不存在或不是你的，一个 404 全解决</strong>。</div>
+
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">A 拿 B 的会话 id 来查，结果如何？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>返回 B 的会话数据</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>命中 0 行 → 404</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>返回 403</div>
+        </div>
+        <div class="quiz-answer">✅ WHERE 带 id+user_id，别人的=不存在→404，不泄露存在性</div>
+      </div>` },
+    { id:"f2", q:"F2. get_current_user 返回的是字符串，为什么？", badge:"模块 F", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>JWT payload 只能存 JSON → 签 token 时 user_id 变字符串；routes 层转回 UUID 才能过滤</strong></div>
+      <p>JWT 的 payload 是 JSON，只能存 JSON 类型，所以签 token 时 <code class="inline">str(user.id)</code> 转成了字符串。但数据库 id 列是 UUID。所以 routes 层要 <code class="inline">uuid.UUID(current_user)</code> 转回来再过滤——<strong>字符串和 UUID 不能直接比较</strong>，这也是上次留的课后题的答案。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">为什么 token 里的 user_id 是字符串？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>数据库 id 本来就是字符串</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>JWT payload 只能存 JSON，签 token 时 str() 转了</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>前端必须传字符串</div>
+        </div>
+        <div class="quiz-answer">✅ JWT payload 是 JSON；routes 层用 uuid.UUID() 转回再过滤</div>
+      </div>` },
+    { id:"f3", q:"F3. 隔离要在几处同时做？", badge:"模块 F", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>隔离三处缺一不可：①接口鉴权 ②创建写归属 ③查询按归属过滤——漏一个都串数据</strong></div>
+      <p>三处缺一不可：</p>
+      <ol>
+        <li><strong>接口鉴权</strong>：每接口挂 <code class="inline">Depends(get_current_user)</code>——没 token 401</li>
+        <li><strong>创建写归属</strong>：<code class="inline">Thread(user_id=user_id)</code>——新会话有主</li>
+        <li><strong>查询按归属过滤</strong>：WHERE 带 <code class="inline">user_id</code>——列表只给本人</li>
+      </ol>
+      <p>只做 1+2 不做 3，列表会串出别人的数据；只做 3 不做 1，等于没设门。三步是完整的"数据隔离闭环"。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">数据隔离三处缺一不可，下列哪个不是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>接口鉴权</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>给表加索引</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>创建写归属</div>
+        </div>
+        <div class="quiz-answer">✅ ①接口鉴权 ②创建写归属 ③查询按归属过滤；索引是性能不是隔离</div>
+      </div>` },
+    { id:"f4", q:"F4. 为什么 get_thread_by_id 从 session.get 换成 select...where？", badge:"模块 F", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>session.get 只按主键不看归属；select(...).where(id, user_id) 才把归属写进 SQL</strong></div>
+      <p><code class="inline">session.get(Thread, id)</code> 只按<strong>主键</strong>查，不看归属——A 查 B 的会话照样返回对象，隔离就穿了。<code class="inline">select(...).where(id==, user_id==)</code> 才真正把归属条件写进 SQL。<strong>"按主键查" vs "按条件查"，一个能隔离一个不能</strong>。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">session.get(Thread, id) 的问题在哪？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>速度太慢</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>只按主键查不看归属，隔离会穿</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>一次只能查一条</div>
+        </div>
+        <div class="quiz-answer">✅ session.get 只看主键，A 查 B 的照样返回；select().where(id,user_id) 才把归属写进 SQL</div>
+      </div>` },
+    { id:"f5", q:"F5. 参数顺序报错 non-default argument follows default argument 是什么？", badge:"模块 F", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>Depends 本质是默认值参数，必须写在无默认值参数（session）之后</strong></div>
+      <p>Python 铁律：带默认值的参数必须放在无默认值参数<strong>之后</strong>，<code class="inline">def f(a=1, b)</code> 直接语法错误。坑在 <code class="inline">Depends(get_current_user)</code> <strong>本质是默认值</strong>——所以 routes 里写法必须是 <code class="inline">(session, current_user=Depends(...))</code>，session 排前面，带 Depends 的排后面。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">def f(a=1, b) 为什么报错？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>参数个数超限</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>带默认值的参数必须放在无默认值之后</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>Python 不支持默认值</div>
+        </div>
+        <div class="quiz-answer">✅ Depends 本质是默认值参数，所以 routes 写 (session, current_user=Depends(...))</div>
+      </div>` },
+    { id:"f6", q:"F6. documents 表没有 user_id，怎么隔离？（间接归属）", badge:"模块 F", html:`
+      <p>Document 只有 <code class="inline">thread_id</code> 没有 <code class="inline">user_id</code>——文档的归属<strong>由它挂的会话决定</strong>：<code class="inline">Document → thread_id → Thread.user_id</code>。所以校验文档归属 = 先拿文档身上的 thread_id，再用 <code class="inline">threads.service.get_thread(thread_id, user_id)</code> 验会话归属，不是你的 → 404。同一份归属校验逻辑被 threads 和 documents <strong>共用</strong>，抽成 <code class="inline">ensure_thread_owned</code>。</p>
+      <div class="box warn"><div class="box-title">上传顺序注意</div><strong>先验权限、再碰文件</strong>（校验放最前，权限没有就不读磁盘不做脏活）。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">documents 表没有 user_id，归属怎么定？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>不隔离，全局共享</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>Document→thread_id→Thread.user_id 间接归属</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>单独给文档加 user_id</div>
+        </div>
+        <div class="quiz-answer">✅ 文档的归属由它挂的会话决定，共用 ensure_thread_owned 校验</div>
+      </div>` },
+    { id:"f7", q:"F7. 权限判断放在哪一层？", badge:"模块 F", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>权限校验（404）在 service 的 ensure_thread_owned；routes 只负责把字符串转 UUID</strong></div>
+      <p>权限校验（404）在 <strong>service</strong> 层（<code class="inline">ensure_thread_owned</code>），routes 只负责把 <code class="inline">current_user</code> 字符串转 UUID 传下去。理由和 C4 一致：业务规则归 service，routes 只接线。隔离的"守卫"统一在 service，不会因为漏挂依赖而漏守。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">ensure_thread_owned 放在哪层？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>routes</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>service</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>repository</div>
+        </div>
+        <div class="quiz-answer">✅ 业务规则归 service，routes 只负责把字符串转 UUID</div>
+      </div>` },
+  ]},
+  { name:"文档异步状态机", items:[
+    { id:"g1", q:"G1. 为什么上传要改成\"立即返回 + 后台处理\"？（同步 vs 异步）", badge:"模块 G", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>异步三步：登记 processing → 立即返回 → 后台处理完置 ready/failed；BackgroundTasks 零依赖够用（不引 Celery）</strong></div>
+      <p>同步 = 上传接口里直接解析/切块/入库，全跑完才返回——大文件时用户干等，中途失败整个请求 500（分不清是文件坏了还是系统炸了）。异步 = 登记记录（status=processing）→ 接口立刻返回 → 后台慢慢处理 → 完成置 ready / 失败置 failed + error_message。前端轮询状态即可。</p>
+      <p>状态机三态：<code class="inline">processing → ready / failed</code>。为什么用 FastAPI BackgroundTasks 而不用 Celery？Celery 要 Redis + 独立进程，对 project5 杀鸡用牛刀；BackgroundTasks 零依赖够用（符合"不一开始追求高并发/微服务"）。</p>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+import asyncio
+
+async def task(name, delay):
+    print(f'{name} 开始')
+    await asyncio.sleep(delay)      # 等待时让出 CPU，事件循环去跑别人
+    print(f'{name} 完成')
+
+async def main():
+    await asyncio.gather(
+        task('解析文档', 0.4),
+        task('生成嵌入', 0.4),
+        task('保存入库', 0.4),
+    )
+
+print('同步做法要 1.2s；async 并发：')
+await main()
+print('三个任务并发完成，总耗时约 0.4s')
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">为什么上传改成"立即返回 + 后台处理"？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>返回 200 更快</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>大文件不干等、中途失败不整个 500</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>代码更少</div>
+        </div>
+        <div class="quiz-answer">✅ 同步=干等+失败整个 500；异步=登记 processing→返回→后台处理→ready/failed</div>
+      </div>`
+ },
+    { id:"g2", q:"G2. 状态码 201 改成 202 是什么语义变化？", badge:"模块 G", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>201=建完了；202=已受理处理中——状态机改变了响应语义</strong></div>
+      <p>201 Created = "我建完了"；202 Accepted = "我收到了，处理中"。<strong>状态机改变了响应语义</strong>——资源不再是上传瞬间创建完，而是"已受理，进度看状态字段"。语义跟着业务形态走，不是随便选的。</p>
+
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">202 Accepted 的语义是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>已经建完了</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>已受理，处理中</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>没有权限</div>
+        </div>
+        <div class="quiz-answer">✅ 201=建完了；202=已受理处理中——状态机改变了响应语义</div>
+      </div>` },
+    { id:"g3", q:"G3. 后台任务为什么自己开会话？", badge:"模块 G", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>后台任务在响应发出后才跑，没有请求上下文 → 必须自己 async with 开会话</strong></div>
+      <p>请求的 <code class="inline">SessionDep</code> 只在请求生命周期有效。BackgroundTasks 的代码在<strong>响应发出后才跑</strong>，没有请求上下文——必须 <code class="inline">async with async_session() as session:</code> 自己开一个新的。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">后台任务为什么自己开会话？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>速度更快</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>响应发出后才跑，没有请求上下文</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>共享会话会报错</div>
+        </div>
+        <div class="quiz-answer">✅ SessionDep 只在请求生命周期有效，后台必须 async with 自开</div>
+      </div>` },
+    { id:"g4", q:"G4. 后台任务为什么不抛 404？（错误处理的分层差异）", badge:"模块 G", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>后台任务没有 HTTP 请求等着 → 不抛 404；出路=记日志 + 置 failed + 存 error_message</strong></div>
+      <p>404 需要"有请求能收到响应"。后台任务没有 HTTP 请求等着，抛了也没人接，只会变成未处理异常。后台失败的出路是：<strong>记日志 + 把状态置 failed + 存 error_message</strong>（<code class="inline">logger.exception</code> + <code class="inline">update_status(document_id, "failed", ...)</code>）。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">后台任务失败的正确出路是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>抛 404</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>记日志 + 状态置 failed + 存 error_message</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>静默忽略</div>
+        </div>
+        <div class="quiz-answer">✅ 没有 HTTP 请求等着，404 没人接；置 failed 让前端轮询可见</div>
+      </div>` },
+    { id:"g5", q:"G5. 临时文件的生命周期延长了", badge:"模块 G", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>临时文件删除从请求内挪到后台任务 finally——删早后台找不到，删晚积累垃圾</strong></div>
+      <p>同步版：请求内 finally 删文件。异步版：<strong>请求返回时文件必须还在</strong>（后台任务还没读），删除挪到后台任务的 finally。文件生命周期从"请求内"延伸到"后台任务内"——删早了后台就找不到文件，删晚了磁盘积累垃圾。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">异步版临时文件什么时候删？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>请求内 finally</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>后台任务的 finally</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>上传前就删</div>
+        </div>
+        <div class="quiz-answer">✅ 请求返回时文件必须还在（后台还没读），删除挪到后台任务的 finally</div>
+      </div>` },
+  ]},
+  ]},
+  { name:"技术雷达", groups:[
+  { name:"Langfuse 可观测", items:[
+    { id:"r1", q:"雷达1. 为什么 Agent 应用需要可观测性？（意图）", badge:"技术雷达", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>Agent 是决策链不是直线；可观测=给链装行车记录仪，看每次模型/工具调用</strong></div>
+      <p>Agent 不是"输入 → 输出"的一条直线，而是一条<strong>决策链</strong>：模型判断要不要调工具 → 调哪个工具 → 工具返回什么 → 模型再总结。线上出问题（答错了、很慢、token 烧太快）时，你没法只看最终回复定位——需要看<strong>每一次模型调用、每一次工具调用</strong>的记录。LLM 可观测性工具就是给这条链装"行车记录仪"。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">Agent 应用为什么需要可观测性？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>让推理更快</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>决策链出问题要看每次模型/工具调用</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>省钱</div>
+        </div>
+        <div class="quiz-answer">✅ Agent 是决策链不是直线，需要"行车记录仪"记录每次调用</div>
+      </div>` },
+    { id:"r2", q:"雷达2. LangSmith vs Langfuse 怎么选？（选型）", badge:"技术雷达", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>LangSmith=云服务（数据出国）；Langfuse=开源可自托管（数据在自己机器）——本地 Demo 选 Langfuse</strong></div>
+      <p>LangSmith = 云服务（数据出国、要注册、免费额度有限）；Langfuse = <strong>开源可自托管</strong>（Docker 一键起，数据在自己机器，也能接生产）。对本地 Demo：Langfuse 自托管够用且数据可控。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">本地 Demo 选 LangSmith 还是 Langfuse？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>LangSmith（云服务）</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>Langfuse（开源可自托管，数据在自己机器）</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>两个都不能用</div>
+        </div>
+        <div class="quiz-answer">✅ LangSmith 数据出国；Langfuse 自托管数据可控</div>
+      </div>` },
+    { id:"r3", q:"雷达3. 自托管架构长什么样？（机制）", badge:"技术雷达", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>两容器就够：langfuse:2（面板+API）+ postgres；免注册靠 INIT 环境变量自动建项目</strong></div>
+      <p>一个 compose 两容器：<code class="inline">langfuse/langfuse:2</code>（面板 + API）+ <code class="inline">postgres:16-alpine</code>（数据）。就这些——v2 只要 Postgres，v3 才要 ClickHouse/Redis/MinIO。端口避开 project5：面板 8080、Langfuse 的库走宿主机 5433。<strong>免注册</strong>：<code class="inline">LANGFUSE_INIT_ORG_ID / PROJECT_ID / *_PUBLIC_KEY / *_SECRET_KEY</code> 让面板首次启动自动建好组织、项目、API key（key 固定，config.py 里写死同一对）。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">Langfuse v2 自托管需要几个容器？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>4 个</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>2 个：langfuse:2 + postgres</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>6 个</div>
+        </div>
+        <div class="quiz-answer">✅ v2 只要 Postgres，v3 才要 ClickHouse/Redis/MinIO</div>
+      </div>` },
+    { id:"r4", q:"雷达4. 最大的坑：SDK 和服务器版本对不上（细节）", badge:"技术雷达", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>最大的坑=版本对不上：SDK 4.x 走 OTLP，v2 服务器不认 → 服务器锁 2 代、SDK 锁 2.55.0</strong></div>
+      <p>SDK 4.x 走 <strong>OTLP 协议</strong>上报，v2 服务器不认（报 "Failed to export span batch code: 404"）。解决办法：<strong>服务器锁 2 代镜像，SDK 锁 2.55.0</strong>。另一个坑：Langfuse 官方 LangChain 集成只兼容 <strong>LangChain v0</strong>，项目用的是 v1——所以官方集成用不了。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">SDK 4.x 上报 v2 服务器报 404 的原因？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>网络断了</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>SDK 4.x 走 OTLP 协议，v2 服务器不认</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>忘了配 key</div>
+        </div>
+        <div class="quiz-answer">✅ 服务器锁 2 代镜像 + SDK 锁 2.55.0 才匹配</div>
+      </div>` },
+    { id:"r5", q:"雷达5. 官方集成用不了，怎么办？——自写回调\"翻译器\"（机制）", badge:"技术雷达", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>自写回调翻译器：根 chain→trace、子节点→span、LLM→generation、工具→span；回调全包 try/except</strong></div>
+      <p>LangGraph/LangChain 每次运行会触发一堆<strong>标准回调钩子</strong>：<code class="inline">on_chain_start/on_llm_start/on_tool_start</code> 等（这是框架稳定 API）。自写的 <code class="inline">LangfuseCallbackHandler</code>（继承 <code class="inline">BaseCallbackHandler</code>）把这些钩子翻译成 Langfuse 的观测对象：</p>
+      <ul>
+        <li>根 chain（parent_run_id 为空）= 整个图 → 开 <strong>trace</strong></li>
+        <li>子 chain（图里的节点）→ trace 下的 <strong>span</strong></li>
+        <li>LLM 调用 → <strong>generation</strong>（记模型名 + token 用量）</li>
+        <li>工具调用 → <strong>span</strong></li>
+      </ul>
+      <p>用 LangChain 给的 <code class="inline">run_id</code> 当 key，开始事件建对象、结束事件补 output。回调里全包 try/except——<strong>观测绝不能拖垮 Agent 本体</strong>。</p>
+      <div class="run-example">
+        <div class="run-head"><span class="run-label">示例 · 可运行</span><button class="run-btn" onclick="runExample(this)">▶ 运行</button></div>
+        <pre class="code">
+# 微缩版「回调翻译器」：官方集成用不了，就把回调事件翻译成结构化记录
+trace = []
+
+def translate(event):
+    if event[0] == 'retrieve':
+        trace.append(f"span[retrieval] docs={event[1]}")
+    elif event[0] == 'llm_start':
+        trace.append(f"span[llm] input={event[1][:16]}...")
+    elif event[0] == 'llm_end':
+        trace.append(f"span[llm] output={event[1][:16]}...")
+
+translate(('retrieve', ['doc1', 'doc2']))
+translate(('llm_start', '请根据资料回答：RAG 是什么？'))
+translate(('llm_end', 'RAG 是检索增强生成，先检索再生成...'))
+
+print('翻译器产出的 trace：')
+for line in trace:
+    print(line)
+</pre>
+        <div class="run-out"></div>
+      </div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">根 chain（parent_run_id 为空）对应 Langfuse 的什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>span</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>trace</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>generation</div>
+        </div>
+        <div class="quiz-answer">✅ 根 chain→trace；子节点→span；LLM→generation；工具→span</div>
+      </div>`
+ },
+    { id:"r6", q:"雷达6. 实测结果（跑真实 chat 验证）", badge:"技术雷达", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>实测一条对话 8 个观测对象；token 真实落库，能看出工具结果把上下文撑大了多少</strong></div>
+      <p>面板 <code class="inline">http://localhost:8080</code> 上一条带工具调用的对话 trace 长这样：</p>
+      <ul>
+        <li>8 个观测对象：3 个 node span（图节点）+ 2 个 web_search span（工具，挂在 node 下）+ 2 个 generation（LLM 调用）</li>
+        <li>token 用量真实落库：第一次调用 in=605/out=121，带工具结果后第二次 in=4463/out=359——<strong>能看出工具结果把上下文撑大了多少</strong></li>
+        <li>工具 span 的 input/output 能看到搜索词和返回结果，定位"模型为什么这么答"直接翻这里</li>
+      </ul>
+
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">一条带工具调用的对话 trace 有多少个观测对象？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>2 个</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>8 个</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>100 个</div>
+        </div>
+        <div class="quiz-answer">✅ 3 node span + 2 web_search span + 2 generation 等共 8 个</div>
+      </div>` },
+    { id:"r7", q:"雷达7. 已知限制", badge:"技术雷达", html:`
+      <div class="box tip"><div class="box-title">关键点</div><strong>generation 偶尔挂错父节点（不影响数据）；生产直接用官方 CallbackHandler</strong></div>
+      <p>generation 的父层级偶尔落在 trace 根而不是 node span（<code class="inline">on_llm_start</code> 找不到父 run 时兜底挂根）——不影响看数据，只影响树形展示的嵌套美观。真实生产直接上官方 CallbackHandler（LangChain v0 或走 OTLP 到 v3 服务器）。</p>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">自写回调翻译器的已知限制是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>完全不能用</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>generation 偶尔挂错父节点，不影响看数据</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>会丢 token 数据</div>
+        </div>
+        <div class="quiz-answer">✅ 兜底挂根只影响嵌套美观，生产直接上官方 CallbackHandler</div>
+      </div>` },
+  ]},
+  ]},
+  { name:"复盘", groups:[
+  { name:"结构地图", items:[
+    { id:"map", q:"结构地图：backend/app 每一层、每个文件做什么", badge:"补充", html:`
+      <p>W4 结束后 project5 后端全貌（对话复盘产出）：</p>
+      <pre class="code">backend/app/
+├── main.py            # 入口：创建 app，注册 4 个 router + 中间件 + 异常处理器，
+│                      #   前缀 /api/v1，/health 健康检查
+├── config.py          # Settings 单例：从 .env 读 DEEPSEEK_API_KEY / BOCHA_API_KEY /
+│                      #   Langfuse keys；database_uri（Postgres 连接串）；
+│                      #   chroma_dir → outputs/chroma；模型 deepseek-v4-flash
+├── middleware.py      # CORS + 请求日志中间件（全局安检门，yield 洋葱模型）
+├── exceptions.py      # 业务异常（AppException 家族 + status_code 子类）
+├── exception_handlers.py  # 异常翻译（handler 注册，exc.status_code + detail → JSON）
+├── security.py        # JWT 认证：hash/verify_password + get_current_user（DI 注入）
+├── db/
+│   ├── main.py        # engine + async_session + SessionDep（数据库会话 DI）+ init_db
+│   ├── models.py      # SQLAlchemy 模型（User / Thread / Document 表结构）
+│   ├── vector_store.py# Chroma 向量库（RAG 检索）+ 切片函数（1000/200 字符）
+│   └── checkpointer.py# AsyncSqliteSaver 聊天记忆 → checkpoints.db
+├── threads/           # 会话模块：routes / service / repository / schemas
+├── documents/         # 文档模块：routes / service / repository / schemas
+└── chat/              # 聊天模块（SSE 流式，W4 新增）
+    ├── langgraph_agent.py  # create_model（DeepSeek 兼容 ChatOpenAI）
+    │                       # + build_retrieval_graph（新版 create_agent）
+    ├── tools.py            # retrieve_user_documents（检索 Chroma）
+    │                       # + web_search（博查 API 走 httpx）
+    └── langfuse_handler.py # 自写 LangfuseCallbackHandler（回调 → trace/span/generation）</pre>
+      <table>
+        <tr><th>文件</th><th>一句话职责</th></tr>
+        <tr><td><code class="inline">main.py</code></td><td>装配工：把路由、中间件、异常处理器全部插到 app 上</td></tr>
+        <tr><td><code class="inline">config.py</code></td><td>配置中心：密钥、数据库连接串、路径、模型名全在这</td></tr>
+        <tr><td><code class="inline">middleware.py</code></td><td>横切门卫：每个请求都经过，做 CORS / 日志</td></tr>
+        <tr><td><code class="inline">exceptions.py</code> + <code class="inline">exception_handlers.py</code></td><td>业务错误一条龙：定义异常（exceptions）+ 翻译成 HTTP（handlers）</td></tr>
+        <tr><td><code class="inline">security.py</code></td><td>认证模块：密码哈希 + JWT 签发/校验 + 当前用户注入</td></tr>
+        <tr><td><code class="inline">db/main.py</code></td><td>数据库地基：引擎、会话工厂、建表入口</td></tr>
+        <tr><td><code class="inline">db/models.py</code></td><td>表结构：三个 ORM 模型，字段/约束/外键全在这</td></tr>
+        <tr><td><code class="inline">db/vector_store.py</code></td><td>RAG 仓库：文档切块 + 存向量 + 相似检索（Chroma）</td></tr>
+        <tr><td><code class="inline">db/checkpointer.py</code></td><td>聊天记忆：LangGraph 的会话历史持久化</td></tr>
+        <tr><td><code class="inline">threads/</code></td><td>会话业务：CRUD + 归属校验，四层分文件</td></tr>
+        <tr><td><code class="inline">documents/</code></td><td>文档业务：上传状态机 + 异步处理 + 间接归属校验</td></tr>
+        <tr><td><code class="inline">chat/</code></td><td>聊天业务：SSE 流式 + RAG 工具 + 可观测性钩子</td></tr>
+      </table>
+      <div class="box note"><div class="box-title">读图心法</div>自上而下：<strong>入口 → 横切（中间件/异常/认证）→ 地基（DB/向量/记忆）→ 业务模块</strong>。每个业务模块内部又是 <strong>routes → service → repository</strong> 同一套三层。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">backend/app/middleware.py 负责什么？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>JWT 认证</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>CORS + 请求日志中间件</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>数据库会话</div>
+        </div>
+        <div class="quiz-answer">✅ middleware.py = 全局安检门（CORS+日志）；认证在 security.py</div>
+      </div>` },
+  ]},
+  { name:"库辨析", items:[
+    { id:"libs", q:"库辨析：8 个容易混的库/服务，一张表分清", badge:"补充", html:`
+      <table>
+        <tr><th>库/服务</th><th>一句话是什么</th><th>项目里的位置</th><th>为什么用 / 为什么不用</th><th>容易和谁混</th></tr>
+        <tr><td><strong>Langfuse</strong></td><td>LLM 可观测性，<strong>开源可自托管</strong>（trace/span/generation）</td><td>自托管面板 8080 + 自写 CallbackHandler</td><td><strong>用</strong>：数据不出门、免费可自托管<br><strong>不用</strong>：要自己养一套服务，版本坑多（SDK/服务器要对齐）；数据能上云直接 LangSmith</td><td>LangSmith</td></tr>
+        <tr><td><strong>LangSmith</strong></td><td>LLM 可观测性，<strong>云服务</strong>（数据出国、要注册）</td><td>没用到，选型时对比掉</td><td><strong>用</strong>：零部署开箱即用、官方维护省心<br><strong>不用</strong>：数据出国、要注册付费；本地 Demo / 数据敏感选 Langfuse</td><td>Langfuse</td></tr>
+        <tr><td><strong>LangGraph</strong></td><td><strong>图编排框架</strong>：节点 + 边 + 循环，做 Agent</td><td><code class="inline">chat/langgraph_agent.py</code> 的 create_agent</td><td><strong>用</strong>：需要循环 / 条件分支 / 多节点状态编排（Agent 刚需）<br><strong>不用</strong>：简单一问一答、固定流水线——链或裸调模型就够</td><td>LangChain</td></tr>
+        <tr><td><strong>LangChain</strong></td><td><strong>工具链框架</strong>：把模型/检索/工具串成链（v1 拆成 langchain-core 等）</td><td>项目用它提供的回调钩子（BaseCallbackHandler）</td><td><strong>用</strong>：现成组件多，串模型/检索/工具快<br><strong>不用</strong>：v0→v1 大重构 API 不稳、抽象层调试难；简单场景裸写更可控</td><td>LangGraph</td></tr>
+        <tr><td><strong>Chroma</strong></td><td><strong>向量库</strong>：存 embedding，做相似检索</td><td><code class="inline">db/vector_store.py</code>（RAG 检索）</td><td><strong>用</strong>：轻量零服务、Python 原生上手快，Demo 阶段够用<br><strong>不用</strong>：数据量大 / 并发高 / 要生产级——换 Milvus / pgvector / Qdrant</td><td>Postgres</td></tr>
+        <tr><td><strong>Postgres</strong></td><td><strong>关系数据库</strong>：存结构化数据</td><td>用户/会话/文档表</td><td><strong>用</strong>：结构化数据、事务、成熟稳定，pgvector 还能顺带向量检索<br><strong>不用</strong>：临时单机小工具——SQLite 更省事</td><td>Chroma</td></tr>
+        <tr><td><strong>loguru</strong></td><td>日志库，第三方、开箱即用（pip 装、配置少）</td><td>项目里打日志</td><td><strong>用</strong>：开箱即用、配置少、输出好看<br><strong>不用</strong>：已有日志规范 / 必须用标准库 logging；极简场景内置 logging 就够</td><td>logging（Python 内置）</td></tr>
+        <tr><td><strong>httpx</strong></td><td>HTTP 客户端，<strong>支持 async</strong></td><td>web_search 调博查 API</td><td><strong>用</strong>：原生 async（FastAPI 里不阻塞事件循环）、API 现代<br><strong>不用</strong>：一次性同步脚本——requests 更简单</td><td>requests（同步）</td></tr>
+        <tr><td><strong>pydantic</strong></td><td>数据校验 + 类型转换</td><td>FastAPI 参数校验/响应模型的底层</td><td><strong>用</strong>：声明式校验+类型转换，FastAPI 的 422 全靠它，接口层刚需<br><strong>不用</strong>：极端性能场景换 msgspec；极简单参数手写 if 也行</td><td>手写 if 校验</td></tr>
+      </table>
+      <div class="box tip"><div class="box-title">怎么记</div>
+        <ul style="margin:0 0 0 18px;">
+          <li><strong>两类观测</strong>：Langfuse（自托管）/ LangSmith（云）——二选一</li>
+          <li><strong>两类 AI 框架</strong>：LangChain（串链）/ LangGraph（画图）——LangGraph 比 LangChain 高一层的编排</li>
+          <li><strong>两类数据库</strong>：Chroma（存向量）/ Postgres（存关系）——project5 两个都在用</li>
+          <li><strong>两类基础件</strong>：loguru（日志）/ httpx（HTTP）/ pydantic（校验）——通用工具箱</li>
+        </ul>
+      </div>
+      <div class="box warn"><div class="box-title">应对心法</div><strong>概念层稳定、API 层易变</strong>。这些库的 API 版本迭代很快（Langfuse SDK 2→4 协议都换了、LangChain v0→v1 大重构），学的是"它解决什么问题、和谁配合"，而不是背 API——API 用到再查文档。</div>
+      
+      <div class="quiz">
+        <div class="quiz-head">📝 自我测试 <span class="quiz-tag">可选 · 点选项判分</span><button class="quiz-show" onclick="showAnswer(this)">显示答案</button></div>
+        <div class="quiz-q">Langfuse 和 LangSmith 的关系是？</div>
+        <div class="quiz-opts">
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>同一个东西的两种叫法</div>
+        <div class="quiz-opt" data-ci="1"><span class="mark"></span>都是 LLM 可观测性工具，一个开源自托管一个云服务</div>
+        <div class="quiz-opt" data-ci="0"><span class="mark"></span>都是向量数据库</div>
+        </div>
+        <div class="quiz-answer">✅ 库辨析表：同属 LLM 可观测，选型看数据是否出国</div>
+      </div>` },
+  ]},
+  ]},
+  { name:"后续", groups:[
+  { name:"待追加", items:[
+    { id:"next", q:"后续：学习过程中新问题继续追加", badge:"待追加", html:`
+      <div class="box note"><div class="box-title">占位</div>W5 开启新项目（多 Agent 运维工单处理：分析 → 检索 → 执行 → 审核 → 报告）后，新的设计问题会在对应新模块里追加。网页保持这份结构，新模块直接在左侧加一组即可。</div>` },
+  ]},
+  ]},
+];
+
+/* ================================================================
+ * 渲染：左侧树 + 右侧内容
+ * ================================================================ */
+const ids = [];
+const modOf = {};
+let modCount = 0;
+const treeEl = document.getElementById('tree');
+const qasEl = document.getElementById('qas');
+
+MODULES.forEach((top, ti) => {
+  // 内容区：每个二级模块 = 一个页面，模块内问题用分隔线区分
+  top.groups.forEach(group => {
+    const sec = document.createElement('section');
+    sec.className = 'modpage';
+    const title = document.createElement('div');
+    title.className = 'mod-title';
+    title.innerHTML = `<span class="mod-lv1">${top.name}</span><span class="mod-arrow">›</span><span class="mod-lv2">${group.name}</span><span class="mod-count">${group.items.length} 条</span>`;
+    sec.appendChild(title);
+    group.items.forEach((item, gi) => {
+      ids.push(item.id);
+      modOf[item.id] = sec;
+      const art = document.createElement('article');
+      art.className = 'qa';
+      art.id = item.id;
+      art.innerHTML = `
+        <span class="badge">${item.badge}</span>
+        <h2>${item.q}</h2>
+        <div class="qid-line">${item.id}</div>
+        <div class="answer">${item.html}</div>`;
+      sec.appendChild(art);
+      if(gi < group.items.length - 1){
+        const sep = document.createElement('hr');
+        sep.className = 'qa-sep';
+        sec.appendChild(sep);
+      }
+    });
+    qasEl.appendChild(sec);
+    modCount++;
+  });
+
+  // 导航区：一级分类 → 二级分组
+  const topLi = document.createElement('li');
+  topLi.className = 'top';
+  const topHeader = document.createElement('div');
+  topHeader.className = 'top-header';
+  const topTotal = top.groups.reduce((n, g) => n + g.items.length, 0);
+  topHeader.innerHTML = `<span class="arrow">▼</span><span class="dot"></span><span class="gname">${top.name}</span><span class="gcount">${topTotal}</span>`;
+  const topUl = document.createElement('ul');
+  topUl.className = 'top-items';
+  top.groups.forEach(group => {
+    const li = document.createElement('li');
+    li.className = 'group';
+    const header = document.createElement('div');
+    header.className = 'group-header';
+    header.innerHTML = `<span class="arrow">▼</span><span class="gname">${group.name}</span><span class="gcount">${group.items.length}</span>`;
+    const ul = document.createElement('ul');
+    ul.className = 'group-items';
+    group.items.forEach(item => {
+      const l = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#';
+      a.dataset.target = item.id;
+      a.innerHTML = `<span class="qid">${item.id}</span>${escapeHtml(item.q.replace(/^[A-Z0-9\-\.\s]+\.\s*/, ''))}`;
+      l.appendChild(a);
+      ul.appendChild(l);
+    });
+    li.appendChild(header);
+    li.appendChild(ul);
+    topUl.appendChild(li);
+    header.addEventListener('click', () => li.classList.toggle('collapsed'));
+  });
+  topLi.appendChild(topHeader);
+  topLi.appendChild(topUl);
+  treeEl.appendChild(topLi);
+  topHeader.addEventListener('click', () => topLi.classList.toggle('collapsed'));
+});
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.getElementById('count').textContent = `共 ${ids.length} 条 · ${modCount} 个页面 · 点左侧查看`;
+
+/* ================================================================
+ * 交互：显示条目 / 上一页下一页 / 搜索 / 深浅色 / 移动端
+ * ================================================================ */
+let current = 0;
+
+function show(id){
+  current = ids.indexOf(id);
+  document.querySelectorAll('.modpage').forEach(el => el.classList.remove('show'));
+  const target = document.getElementById(id);
+  if(!target) return;
+  const page = modOf[id];
+  if(page) page.classList.add('show');
+  // 高亮左侧
+  document.querySelectorAll('#tree a').forEach(a => a.classList.toggle('active', a.dataset.target === id));
+  // 展开所在分组
+  const group = document.querySelector(`#tree a[data-target="${id}"]`)?.closest('.group');
+  if(group) group.classList.remove('collapsed');
+  const top = group?.closest('.top');
+  if(top) top.classList.remove('collapsed');
+  // 滚动定位到该问题
+  target.scrollIntoView({block:'start'});
+  renderPager();
+}
+
+function renderPager(){
+  const prev = document.getElementById('prevBtn');
+  const next = document.getElementById('nextBtn');
+  const prevName = current > 0 ? ids[current-1] : '';
+  const nextName = current < ids.length-1 ? ids[current+1] : '';
+  prev.disabled = current <= 0;
+  next.disabled = current >= ids.length-1;
+  prev.querySelector('.name').textContent = prevName ? `← ${shortLabel(ids[current-1])}` : '已经是第一条';
+  next.querySelector('.name').textContent = nextName ? `${shortLabel(ids[current+1])} →` : '已经是最后一条';
+}
+function shortLabel(id){
+  const item = MODULES.flatMap(m => m.groups.flatMap(g => g.items)).find(i => i.id === id);
+  return item ? item.q.replace(/^[A-Z0-9\-\.\s]+\.\s*/, '') : id;
+}
+
+// 底部翻页按钮
+const pager = document.createElement('div');
+pager.className = 'pager';
+pager.innerHTML = `
+  <button id="prevBtn" onclick="go(-1)"><span class="dir">上一页</span><span class="name"></span></button>
+  <button id="nextBtn" onclick="go(1)"><span class="dir">下一页</span><span class="name"></span></button>`;
+document.querySelector('.content').appendChild(pager);
+
+function go(delta){
+  const idx = current + delta;
+  if(idx < 0 || idx >= ids.length) return;
+  show(ids[idx]);
+}
+
+// 树点击
+treeEl.addEventListener('click', e => {
+  const a = e.target.closest('a[data-target]');
+  if(a){ e.preventDefault(); show(a.dataset.target); }
+});
+
+// 搜索过滤
+const searchEl = document.getElementById('search');
+searchEl.addEventListener('input', () => {
+  const kw = searchEl.value.trim().toLowerCase();
+  document.querySelectorAll('#tree a').forEach(a => {
+    const match = a.textContent.toLowerCase().includes(kw) || a.dataset.target.includes(kw);
+    a.style.display = match ? '' : 'none';
+  });
+  document.querySelectorAll('#tree .group').forEach(g => {
+    const any = [...g.querySelectorAll('a')].some(a => a.style.display !== 'none');
+    g.style.display = any ? '' : 'none';
+    if(any) g.classList.remove('collapsed');
+  });
+  document.querySelectorAll('#tree .top').forEach(t => {
+    const any = [...t.querySelectorAll('.group')].some(g => g.style.display !== 'none');
+    t.style.display = any ? '' : 'none';
+    if(any) t.classList.remove('collapsed');
+  });
+});
+
+// 深浅色
+function toggleDark(){ document.body.classList.toggle('dark'); }
+// 移动端侧边栏
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); }
+
+// 首屏默认显示第一条
+show(ids[0]);
+
+/* 可运行示例：Pyodide 懒加载（第一次点运行才下载，约 5-10s） */
+let pyodideReady = null;
+function ensurePy(){
+  if(!pyodideReady){
+    pyodideReady = (async () => {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js';
+        s.onload = res;
+        s.onerror = () => rej(new Error('加载 Python 运行时失败，请检查网络后重试'));
+        document.head.appendChild(s);
+      });
+      return loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/' });
+    })();
+  }
+  return pyodideReady;
+}
+async function runExample(btn){
+  const ex = btn.closest('.run-example');
+  const code = ex.querySelector('pre.code').textContent;
+  const out = ex.querySelector('.run-out');
+  btn.disabled = true;
+  btn.textContent = '加载中…';
+  out.style.display = 'block';
+  out.textContent = '正在加载 Python 运行时（首次约 5-10s）…';
+  try{
+    const py = await ensurePy();
+    btn.textContent = '运行中…';
+    let buf = '';
+    py.setStdout({ batched: s => { buf += s + '\n'; out.textContent = buf; } });
+    py.setStderr({ batched: s => { buf += '⚠ ' + s + '\n'; out.textContent = buf; } });
+    await py.runPythonAsync(code);
+    if(!buf.trim()) out.textContent = '（无输出）';
+    btn.textContent = '▶ 重跑';
+  }catch(err){
+    out.textContent = '运行出错：' + (err && err.message ? err.message : err);
+    btn.textContent = '▶ 重跑';
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/* 题目测试：点击选项判分 */
+document.addEventListener('click', function(e){
+  const opt = e.target.closest('.quiz-opt');
+  if(!opt || opt.classList.contains('locked')) return;
+  const quiz = opt.closest('.quiz');
+  const isRight = opt.getAttribute('data-ci') === '1';
+  const mark = opt.querySelector('.mark');
+  if(isRight){
+    opt.classList.add('right','locked');
+    mark.textContent = '✓';
+  }else{
+    opt.classList.add('wrong','locked');
+    mark.textContent = '✗';
+    const right = quiz.querySelector('.quiz-opt[data-ci="1"]');
+    if(right){
+      right.classList.add('right','locked');
+      right.querySelector('.mark').textContent = '✓';
+    }
+  }
+  const ans = quiz.querySelector('.quiz-answer');
+  if(ans) ans.classList.add('show');
+});
+function showAnswer(btn){
+  const quiz = btn.closest('.quiz');
+  quiz.querySelectorAll('.quiz-opt').forEach(function(o){ o.classList.add('locked'); });
+  const ans = quiz.querySelector('.quiz-answer');
+  if(ans) ans.classList.add('show');
+}
+</script>
+</body>
+</html>
