@@ -1,6 +1,12 @@
 # project5 —— 全栈 AI 知识库（React 版）
 
-临摹重构 `LangGraph-RAG-Agent-main`：上传私有文档 → RAG/Agent 问答的完整产品。React 前端 + FastAPI 后端 + LangGraph Agent + 本地向量库，Docker Compose 一键部署。
+参考开源项目 `LangGraph-RAG-Agent-main` 的 RAG/Agent 链路思路，**重写并补齐产品化模块**，做成一个可部署的全栈产品：上传私有文档 → RAG/Agent 问答。React 前端 + FastAPI 后端 + LangGraph Agent + 本地向量库，Docker Compose 一键部署。
+
+<!-- 截图待补（放 2 张即可：问答页 + Langfuse trace 图）
+     存到 docs/screenshots/ 后，把下面两行取消注释并删掉本注释：
+     ![问答页](docs/screenshots/chat.png)
+     ![Langfuse trace](docs/screenshots/langfuse-trace.png)
+-->
 
 ---
 
@@ -55,11 +61,7 @@ FastAPI 后端 (8001)
 | 观测 | Langfuse（自托管） | 技术雷达 Demo，可选 |
 | 部署 | Docker Compose | backend+frontend+postgres 三条服务 |
 
-## 五、项目截图
-
-> TODO: 待补（问答页截图 + Langfuse trace 图）
-
-## 六、部署方式
+## 五、部署方式
 
 前置条件：Docker Desktop；项目根 `.env` 配 `DEEPSEEK_API_KEY` / `BOCHA_API_KEY`（见 `.env.example`）。
 
@@ -92,7 +94,7 @@ docker compose -f docker-compose.langfuse.yml up -d   # 面板 http://localhost:
 
 数据安全：Chroma / SQLite / 上传文档在 `./outputs`（挂载卷，容器删除不丢）；embedding 模型缓存走命名卷；密钥只经环境变量透传，不写入镜像。
 
-## 七、遇到的问题（排坑记录）
+## 六、遇到的问题（排坑记录）
 
 | 问题 | 根因 | 解决 |
 |---|---|---|
@@ -108,7 +110,7 @@ docker compose -f docker-compose.langfuse.yml up -d   # 面板 http://localhost:
 | **登录后找不到退出/登录入口** | 前端没有退出按钮；localStorage 有 token 就直接渲染主界面（不校验有效性、没有出口），残留旧 token 会把用户"困"在空主界面 | 侧边栏加「退出登录」（回登录形态卡片）；`fetchThreads` 收 401 自动清 token 回登录卡片（`App.jsx` / `ThreadList.jsx`） |
 | **一键启动脚本双击报"不是内部或外部命令"** | cmd 解析 .bat 用系统 ANSI 码页（中文 Windows=GBK），且只认 CRLF 行尾；UTF-8 + LF 的中文脚本会被错行拆解 | `启动.bat` 存为 GBK + CRLF；在 VSCode 里显示乱码属正常现象，不影响双击运行 |
 
-## 八、RAG 评估（工程化）
+## 七、RAG 评估（工程化）
 
 评估体系在 `backend/eval/`，两套指标 + 一套测试集，量化回答质量：
 
