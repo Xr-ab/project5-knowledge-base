@@ -20,10 +20,11 @@ function App() {
   const streamAbortRef = useRef(null)  // 正在跑的流式请求（切会话/新建时要取消它，防串台）
   const selectSeqRef = useRef(0)       // 会话点击序号：快速连点时，只让"最后一次点击"的拉取结果上屏
   const [isUploading, setIsUploading] = useState(false) // 上传中文 = true，禁用输入条
-  // 登录表单的状态（未登录时显示登录卡片，登录成功后进入聊天界面）
+  // 登录/注册表单的状态（未登录时显示认证卡片，成功后进入聊天界面）
+  const [authMode, setAuthMode] = useState('login')   // 'login' | 'register'
   const [loginUsername, setLoginUsername] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
-  const [loginError, setLoginError] = useState('')
+  const [authError, setAuthError] = useState('')
 
   // 登录小助手：打 auth/login 换 token，记进 state 并返回。
   // 账号密码由登录表单提供（后端 JWT 校验，不再有免密假登录）。
@@ -43,14 +44,60 @@ function App() {
   // 点登录按钮：先登录拿 token，成功后再拉会话列表
   async function handleLogin(e) {
     e.preventDefault()
-    setLoginError('')
+    setAuthError('')
     try {
       await doLogin(loginUsername, loginPassword)
       setLoginPassword('')   // 登录成功清空密码框（避免下次误用旧密码）
       fetchThreads()         // 登录成功后才能拉到属于该用户的会话
     } catch (err) {
-      setLoginError(err.message)
+      setAuthError(err.message)
     }
+  }
+
+  // 点注册按钮：先打 auth/register，成功后直接复用 doLogin 自动登录（不用再手输一遍）
+  async function handleRegister(e) {
+    e.preventDefault()
+    setAuthError('')
+    try {
+      const res = await fetch(`${BACKEND_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: loginUsername, password: loginPassword }),
+      })
+      if (!res.ok) {
+        // 409 重名等业务错误：后端 detail 是给人看的文案，优先透传；
+        // 422 是 pydantic 校验失败（detail 是数组），换成对应表单规则的提示
+        let msg = ''
+        try { msg = (await res.json()).detail } catch { /* 响应不是 JSON → 走兜底 */ }
+        if (typeof msg !== 'string' || !msg) {
+          msg = res.status === 422 ? '用户名至少 3 位、密码至少 8 位' : `注册失败（${res.status}）`
+        }
+        throw new Error(msg)
+      }
+      await doLogin(loginUsername, loginPassword)   // 注册成功 → 自动登录进主界面
+      setLoginPassword('')
+      fetchThreads()
+    } catch (err) {
+      setAuthError(err.message)
+    }
+  }
+
+  // 登录/注册卡片互相切换（清掉上一条错误；输入框内容保留，省得重打）
+  function switchAuthMode(mode) {
+    setAuthMode(mode)
+    setAuthError('')
+  }
+
+  // 退出登录：掐断在跑的流 + 清 token（state 和 localStorage 通清）→ 回到登录/注册卡片
+  function handleLogout() {
+    streamAbortRef.current?.abort()
+    setAuthMode('login')   // 退出后回到"登录"形态的卡片（而不是停在注册表单上）
+    setToken('')
+    localStorage.removeItem('token')
+    setThreads([])
+    setThreadId('')
+    setMessages([])
+    setAiText(''); setAiThinking('')
   }
 
   // 拉会话列表（侧边栏用）：GET /threads，带 token（后端已做会话隔离，必须带）
@@ -60,7 +107,12 @@ function App() {
       const res = await fetch(`${BACKEND_URL}/threads`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      if (!res.ok) return
+      if (!res.ok) {
+        // token 失效（过期/账号被删）：清掉登录态 → 自动回登录/注册卡片；
+        // 否则会被困在一个拉不到数据的"空主界面"里（连退出入口都没有）
+        if (res.status === 401) { setToken(''); localStorage.removeItem('token') }
+        return
+      }
       setThreads(await res.json())
     } catch {
       /* 拉列表失败不阻断聊天，默默忽略 */
@@ -275,12 +327,13 @@ function App() {
     }
   }
 
-  // 未登录：渲染登录卡片（账号密码登录，成功后 setToken 触发进入主界面）
+  // 未登录：渲染登录/注册卡片（两种模式共用一个表单，成功后 setToken 触发进入主界面）
   if (!token) {
+    const isLogin = authMode === 'login'
     return (
       <div className="login-screen">
-        <form className="login-form" onSubmit={handleLogin}>
-          <h2>登录项目5知识库</h2>
+        <form className="login-form" onSubmit={isLogin ? handleLogin : handleRegister}>
+          <h2>{isLogin ? '登录项目5知识库' : '注册项目5知识库'}</h2>
           <input
             type="text"
             value={loginUsername}
@@ -292,11 +345,21 @@ function App() {
             type="password"
             value={loginPassword}
             onChange={(e) => setLoginPassword(e.target.value)}
-            placeholder="密码"
-            autoComplete="current-password"
+            placeholder={isLogin ? '密码' : '密码（至少 8 位）'}
+            autoComplete={isLogin ? 'current-password' : 'new-password'}
           />
-          {loginError && <p className="login-error">{loginError}</p>}
-          <button type="submit">登录</button>
+          {authError && <p className="login-error">{authError}</p>}
+          <button type="submit">{isLogin ? '登录' : '注册'}</button>
+          <p className="auth-switch">
+            {isLogin ? '没有账号？' : '已有账号？'}
+            <button
+              type="button"
+              className="auth-switch-link"
+              onClick={() => switchAuthMode(isLogin ? 'register' : 'login')}
+            >
+              {isLogin ? '注册一个' : '去登录'}
+            </button>
+          </p>
         </form>
       </div>
     )
@@ -306,7 +369,7 @@ function App() {
   return (
     <div className="chat-app">
       {/* 左侧会话列表（侧边栏） */}
-      <ThreadList threads={threads} activeId={threadId} onSelect={handleSelectThread} onNew={handleNewThread} onDelete={handleDeleteThread} />
+      <ThreadList threads={threads} activeId={threadId} onSelect={handleSelectThread} onNew={handleNewThread} onDelete={handleDeleteThread} onLogout={handleLogout} />
       {/* 右侧聊天区：消息列表 + 输入框 */}
       <div className="chat-main">
         <MessageList messages={messages} aiText={aiText} aiThinking={aiThinking} />

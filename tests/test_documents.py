@@ -19,6 +19,7 @@ from app.db.vector_store import (
 )
 from app.documents import service as document_service
 from app.documents.schemas import DocumentBase
+from app.threads import service as thread_service
 
 
 # ---------- ① 切片纯函数：验证重叠逻辑 ----------
@@ -66,18 +67,21 @@ async def test_document_crud(tmp_path):
     factory = async_sessionmaker(engine, expire_on_commit=False)
 
     async with factory() as session:
-        tid = uuid.uuid4()
+        # 鉴权改造后：文档的归属绕会话校验，所以先建一个真的会话（假 thread_id 会 404）
+        user_id = uuid.uuid4()
+        thread = await thread_service.create_new_thread(user_id, session)
+
         doc = await document_service.insert_document(
-            DocumentBase(file_name="a.txt", thread_id=tid), session
+            DocumentBase(file_name="a.txt", thread_id=thread.id), session
         )
         assert doc.id is not None  # 数据库填的 id 有了
 
-        got = await document_service.get_documents(tid, session)
+        got = await document_service.get_documents(thread.id, user_id, session)
         assert [d.id for d in got] == [doc.id]  # 按会话能查到
 
-        await document_service.delete_document(doc.id, session)
-        assert await document_service.get_documents(tid, session) == []  # 删后查空
+        await document_service.delete_document(doc.id, user_id, session)
+        assert await document_service.get_documents(thread.id, user_id, session) == []  # 删后查空
 
         with pytest.raises(Exception):  # 再删一次 → 404
-            await document_service.delete_document(doc.id, session)
+            await document_service.delete_document(doc.id, user_id, session)
     await engine.dispose()

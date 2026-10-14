@@ -1,5 +1,5 @@
 // ThreadList.jsx —— 左侧会话列表（侧边栏）：点哪个就切到哪个会话
-function ThreadList({ threads, activeId, onSelect, onNew, onDelete }) {
+function ThreadList({ threads, activeId, onSelect, onNew, onDelete, onLogout }) {
   return (
     <aside className="sidebar">
       {/* 新建会话按钮：清空当前，下次发消息建新的 */}
@@ -33,6 +33,9 @@ function ThreadList({ threads, activeId, onSelect, onNew, onDelete }) {
           </div>
         ))}
       </div>
+
+      {/* 退出登录：清掉本地 token 回登录/注册卡片 */}
+      <button className="logout-btn" onClick={onLogout}>退出登录</button>
     </aside>
   )
 }

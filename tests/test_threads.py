@@ -1,5 +1,6 @@
 """test_threads.py —— service 层 CRUD 测试（临时 sqlite，不碰真实数据）。"""
 import os
+import uuid
 
 # 老规矩：import 前先给环境变量（config 模块级 Settings() 会立即执行）
 os.environ["DEEPSEEK_API_KEY"] = "test-key"
@@ -22,21 +23,23 @@ async def test_thread_crud(tmp_path):
 
     # ② 会话：测试里自己建（不经过 FastAPI 注入），用完手动关
     async with factory() as session:
-        # 创建：不传参数 → 默认标题
-        t = await thread_service.create_new_thread(session)
+        user_id = uuid.uuid4()  # 鉴权改造后：service 层都带 user_id（归属 / 隔离）
+
+        # 创建：只传归属用户 → 默认标题
+        t = await thread_service.create_new_thread(user_id, session)
         assert t.title == "New Chat"
 
-        # 查询：能按 id 查到
-        got = await thread_service.get_thread(t.id, session)
+        # 查询：能按 id + 归属查到
+        got = await thread_service.get_thread(t.id, user_id, session)
         assert got.id == t.id
 
         # 修改：标题改掉
-        updated = await thread_service.update_thread(ThreadUpdate(title="我的研究"), t.id, session)
+        updated = await thread_service.update_thread(ThreadUpdate(title="我的研究"), t.id, user_id, session)
         assert updated.title == "我的研究"
 
         # 删除：删后再查 → 404
-        await thread_service.delete_thread(t.id, session)
+        await thread_service.delete_thread(t.id, user_id, session)
         with pytest.raises(Exception):
-            await thread_service.get_thread(t.id, session)
+            await thread_service.get_thread(t.id, user_id, session)
 
     await engine.dispose()  # ③ 关引擎（释放连接），测试结束

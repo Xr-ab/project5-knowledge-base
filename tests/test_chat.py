@@ -21,6 +21,7 @@ from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
 from app.chat.schemas import ChatStreamResponse
 from app.chat.tools import tools
 from app.main import app
+from app.security import create_access_token
 
 
 def test_tools_registered():
@@ -62,8 +63,19 @@ async def test_ndjson_protocol_translation():
     ]
 
 
+def test_chat_history_without_token_401():
+    """没带 token 查历史 → 401（把"必须登录"锁进测试）。"""
+    client = TestClient(app)  # 不跑 lifespan：本测试不碰 Postgres（test_health 同款）
+    r = client.get(f"/api/v1/chat/{uuid.uuid4()}")
+    assert r.status_code == 401
+
+
 def test_chat_history_empty_404():
-    """从没聊过的会话查历史 → 404（只查存档器，不触发模型调用）。"""
-    with TestClient(app) as client:
-        r = client.get(f"/api/v1/chat/{uuid.uuid4()}")
-        assert r.status_code == 404
+    """带合法 token，从没聊过的会话查历史 → 404（只查存档器，不触发模型/数据库）。"""
+    client = TestClient(app)  # 同样不跑 lifespan：鉴权只验签，不查库
+    token = create_access_token(str(uuid.uuid4()))
+    r = client.get(
+        f"/api/v1/chat/{uuid.uuid4()}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 404

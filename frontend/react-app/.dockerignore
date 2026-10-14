@@ -1,0 +1,9 @@
+# frontend/.dockerignore：构建前端镜像时哪些不打进箱子
+# 不写这个，宿主 node_modules（Windows 平台二进制）会被 COPY 进 Alpine 容器 ——
+# 和 Linux 不匹配，vite/rollup/esbuild 会直接炸构建；容器里 npm install 会自己装对的那份。
+# dist/ 同理不进上下文：镜像里的 dist 由容器内 npm run build 现产。
+
+node_modules/
+dist/
+*.log
+.DS_Store

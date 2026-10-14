@@ -1,0 +1,1861 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>project5 全栈 AI 知识库 · 核心架构图</title>
+<style>
+:root{
+  --bg:#f4f6fb; --panel:#fff; --panel2:#f8fafc; --line:#cbd5e1; --line2:#e2e8f0;
+  --fg:#0f172a; --fg2:#334155; --muted:#64748b; --muted2:#94a3b8;
+  --hot:#ea580c; --hotbg:#fff7ed; --accent:#2563eb; --red:#dc2626; --green:#16a34a; --amber:#d97706;
+  --shadow:0 1px 2px rgba(15,23,42,.06),0 4px 14px rgba(15,23,42,.06);
+  --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+[data-theme="dark"]{
+  --bg:#080c14; --panel:#0e1522; --panel2:#131c2b; --line:#334155; --line2:#1e293b;
+  --fg:#e8eef8; --fg2:#c3cee0; --muted:#93a3ba; --muted2:#64748b;
+  --hot:#fb923c; --hotbg:#2a1a09; --accent:#60a5fa; --red:#f87171; --green:#4ade80; --amber:#fbbf24;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--fg);font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  display:flex;flex-direction:column;height:100vh;overflow:hidden}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:6px;border:2px solid transparent;background-clip:content-box}
+
+/* 顶栏 */
+.topbar{display:flex;align-items:center;gap:18px;padding:10px 18px;background:var(--panel);
+  border-bottom:1px solid var(--line2);box-shadow:var(--shadow);z-index:30;flex:0 0 auto}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.logo{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:14px;
+  background:linear-gradient(135deg,#2563eb,#db2777);color:#fff;flex:0 0 auto}
+.brand h1{font-size:15px;margin:0;white-space:nowrap}
+.brand p{margin:0;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.tabs{display:flex;gap:6px;margin-left:auto}
+.tabs button{border:1px solid var(--line2);background:var(--panel2);border-radius:999px;padding:7px 16px;font-size:13px;color:var(--fg2);transition:.15s;white-space:nowrap}
+.tabs button:hover{border-color:var(--accent);color:var(--accent)}
+.tabs button.active{background:linear-gradient(135deg,#2563eb,#4f46e5);border-color:transparent;color:#fff;font-weight:600}
+.icon-btn{border:1px solid var(--line2);background:var(--panel2);border-radius:8px;padding:6px 10px;font-size:13px}
+.icon-btn:hover{border-color:var(--accent)}
+
+/* 视图 */
+.view{flex:1 1 auto;min-height:0;display:none}
+.view.active{display:flex}
+.side{width:236px;flex:0 0 auto;background:var(--panel);border-right:1px solid var(--line2);overflow:auto;padding:14px 12px}
+.side.collapsed{display:none}
+#sideBtn.on{border-color:var(--accent);color:var(--accent)}
+.kbd{font-size:11px;color:var(--muted2);white-space:nowrap}
+.jumpbtn{border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:999px;
+  padding:3px 12px;font-size:12px;margin-left:8px;white-space:nowrap}
+.jumpbtn:hover{background:var(--accent);color:#fff}
+.side h3{font-size:11px;letter-spacing:.12em;color:var(--muted);margin:14px 0 8px;font-weight:700}
+.side h3:first-child{margin-top:0}
+.slist{list-style:none;margin:0;padding:0}
+.slist li{padding:8px 10px;border-radius:9px;margin-bottom:5px;cursor:pointer;border:1px solid transparent;font-size:13px;display:flex;gap:8px;align-items:flex-start;transition:.12s}
+.slist li:hover{background:var(--panel2)}
+.slist li.active{background:var(--panel2);border-color:var(--accent);font-weight:600}
+.slist li .dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:0 0 auto;background:var(--accent)}
+.slist li small{display:block;color:var(--muted);font-weight:400;font-size:11.5px;line-height:1.45}
+.searchbox{width:100%;padding:7px 10px;border:1px solid var(--line2);border-radius:8px;background:var(--panel2);margin-bottom:8px;outline:none}
+.searchbox:focus{border-color:var(--accent)}
+
+/* 画布 */
+.stage{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+.stage-head{display:flex;align-items:center;gap:12px;padding:9px 16px;background:var(--panel);border-bottom:1px solid var(--line2);flex-wrap:wrap;flex:0 0 auto}
+.stage-head h2{font-size:14px;margin:0}
+.stage-head .desc{font-size:12px;color:var(--muted);flex:1 1 260px;min-width:0}
+.legend{display:flex;gap:5px;flex-wrap:wrap}
+.chip{font-size:10.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--nc);color:var(--nc);background:var(--nb);white-space:nowrap}
+.zoom{display:flex;gap:4px;align-items:center;font-size:12px;color:var(--muted)}
+.canvas-viewport{flex:1 1 auto;overflow:auto;padding:18px;position:relative}
+.canvas{position:relative;transform-origin:0 0;margin:0 auto}
+#edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;z-index:2}
+#groups,#nodes{position:absolute;left:0;top:0}
+#groups{z-index:1}
+#nodes{z-index:3}
+#edgeLabels{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;z-index:4}
+
+/* 节点配色 */
+.c-client  {--nc:#0284c7;--nb:#e0f2fe}
+.c-gateway {--nc:#7c3aed;--nb:#ede9fe}
+.c-frame   {--nc:#2563eb;--nb:#dbeafe}
+.c-route   {--nc:#059669;--nb:#d1fae5}
+.c-service {--nc:#d97706;--nb:#fef3c7}
+.c-data    {--nc:#dc2626;--nb:#fee2e2}
+.c-external{--nc:#0d9488;--nb:#ccfbf1}
+.c-agent   {--nc:#db2777;--nb:#fce7f3}
+.c-memory  {--nc:#6d28d9;--nb:#ede9fe}
+.c-problem {--nc:#dc2626;--nb:#fff7f7}
+.c-ok      {--nc:#16a34a;--nb:#dcfce7}
+[data-theme="dark"] .c-client  {--nc:#38bdf8;--nb:#082f49}
+[data-theme="dark"] .c-gateway {--nc:#a78bfa;--nb:#251057}
+[data-theme="dark"] .c-frame   {--nc:#60a5fa;--nb:#10254d}
+[data-theme="dark"] .c-route   {--nc:#34d399;--nb:#04372b}
+[data-theme="dark"] .c-service {--nc:#fbbf24;--nb:#3b2403}
+[data-theme="dark"] .c-data    {--nc:#f87171;--nb:#40100f}
+[data-theme="dark"] .c-external{--nc:#2dd4bf;--nb:#053b38}
+[data-theme="dark"] .c-agent   {--nc:#f472b6;--nb:#45092c}
+[data-theme="dark"] .c-memory  {--nc:#a78bfa;--nb:#241056}
+[data-theme="dark"] .c-problem {--nc:#f87171;--nb:#40100f}
+[data-theme="dark"] .c-ok      {--nc:#4ade80;--nb:#052e16}
+
+.grp{position:absolute;border:2px dashed var(--nc);background:var(--nb);border-radius:16px;opacity:.72}
+.grp .gt{position:absolute;top:-11px;left:14px;padding:1px 10px;border-radius:999px;font-size:11px;font-weight:700;
+  color:var(--nc);background:var(--bg);border:1px solid var(--nc);white-space:nowrap}
+.node{position:absolute;border:2px solid var(--nc);background:var(--nb);border-radius:11px;padding:6px 10px;cursor:pointer;
+  transition:transform .12s,box-shadow .12s,opacity .2s;box-shadow:var(--shadow);overflow:hidden}
+.node:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(15,23,42,.18);z-index:5}
+.node .t{font-size:12.5px;font-weight:700;color:var(--nc);line-height:1.28;word-break:break-word}
+.node .s{font-size:10.8px;color:var(--fg2);line-height:1.35;margin-top:1px;word-break:break-word}
+.node .f{font-family:var(--mono);font-size:9.8px;color:var(--muted2);line-height:1.25;margin-top:2px;word-break:break-all}
+.node.dash{border-style:dashed}
+.node.dim{opacity:.2;filter:saturate(.35)}
+.node.sel{box-shadow:0 0 0 3px var(--hot),0 8px 22px rgba(234,88,12,.3);z-index:6}
+.node.hot{border-color:var(--hot)!important;background:var(--hotbg)!important;
+  box-shadow:0 0 0 4px rgba(234,88,12,.26),0 10px 26px rgba(234,88,12,.3);z-index:7;transform:scale(1.03)}
+.node.hot .t{color:var(--hot)!important}
+
+/* 播放器 & 控制台 */
+.player{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--panel);border-top:1px solid var(--line2);flex:0 0 auto;flex-wrap:wrap}
+.player button{border:1px solid var(--line2);background:var(--panel2);border-radius:8px;padding:6px 12px;font-size:12.5px}
+.player button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.player button:disabled{opacity:.45;cursor:not-allowed}
+.player .step{font-size:12.5px;color:var(--muted);margin-left:4px}
+.player .step b{color:var(--fg)}
+.bar{flex:1 1 140px;height:6px;background:var(--line2);border-radius:999px;overflow:hidden;min-width:80px}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2563eb,#db2777);transition:width .2s}
+.console{height:170px;flex:0 0 auto;overflow:auto;background:var(--panel2);border-top:1px solid var(--line2);padding:10px 14px;
+  font-family:var(--mono);font-size:11.8px;line-height:1.75}
+.console .ln{display:flex;gap:9px;padding:1px 0;animation:fin .2s ease-out}
+.console .ln .n{color:var(--muted2);flex:0 0 24px;text-align:right}
+.console .ln .m{flex:1 1 auto;color:var(--fg2);word-break:break-word}
+.console .ln .tag{flex:0 0 auto;font-size:10px;padding:0 6px;border-radius:4px;height:17px;line-height:17px;margin-top:1px}
+.console .ln.info .tag{background:rgba(37,99,235,.16);color:#2563eb}
+.console .ln.err .tag{background:rgba(220,38,38,.16);color:#dc2626}
+.console .empty{color:var(--muted2)}
+@keyframes fin{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+/* 检视面板 */
+.inspector{width:378px;flex:0 0 auto;background:var(--panel);border-left:1px solid var(--line2);overflow:auto;padding:16px 15px;display:none}
+.inspector.open{display:block}
+.insp-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px}
+.insp-head h3{margin:0;font-size:11px;letter-spacing:.12em;color:var(--muted)}
+.insp-head button{border:1px solid var(--line2);background:var(--panel2);border-radius:7px;padding:1px 8px;font-size:12px}
+.insp-title{font-size:15px;font-weight:800;line-height:1.35}
+.insp-badges{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}
+.badge{font-size:10.5px;padding:2px 9px;border-radius:999px;border:1px solid var(--nc,var(--line));color:var(--nc,var(--fg2));background:var(--nb,var(--panel2))}
+.insp-sec{margin:13px 0 0;border-top:1px dashed var(--line2);padding-top:11px}
+.insp-sec h4{font-size:11.5px;margin:0 0 6px;color:var(--muted)}
+.insp-sec p{margin:0;font-size:12.8px;color:var(--fg2)}
+.mono{font-family:var(--mono);font-size:11.5px;background:var(--panel2);border:1px solid var(--line2);border-radius:7px;padding:5px 9px;display:block;word-break:break-all;color:var(--fg2)}
+.pit{font-size:12.5px;background:var(--hotbg);border:1px solid rgba(234,88,12,.4);border-radius:9px;padding:8px 10px;color:var(--fg2)}
+.pit b{color:var(--hot)}
+.insp-sec p.lead2{font-size:13.2px;font-weight:600;color:var(--fg);margin-bottom:5px}
+pre.code{margin:0;background:#0f172a;color:#dbe4f0;border-radius:9px;padding:9px 11px;border:1px solid #1e293b;
+  font-family:var(--mono);font-size:10.8px;line-height:1.7;overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+[data-theme="dark"] pre.code{background:#05090f}
+pre.code .cm{color:#7b8ca6}
+.tune-p{font-family:var(--mono);font-size:11.4px;background:var(--panel2);border:1px solid var(--line2);
+  border-left:3px solid var(--accent);border-radius:8px;padding:6px 9px;margin-bottom:6px;color:var(--accent);word-break:break-all}
+.tune-p b{color:var(--accent);font-weight:700}
+.tune-p span{display:block;font-family:inherit;font-size:11px;color:var(--muted);margin-top:2px}
+.tune ul{list-style:none;margin:0 0 10px;padding:0}
+.tune ul:last-child{margin-bottom:0}
+.tune li{position:relative;padding:2px 0 2px 14px;font-size:12.2px;color:var(--fg2);line-height:1.55}
+.tune li::before{content:"·";position:absolute;left:4px;color:var(--accent);font-weight:800}
+.nb-hint{font-size:11.5px;color:var(--muted);margin:0 0 9px;line-height:1.6}
+.nb-hint b{color:var(--accent)}
+.nb-grp{margin-bottom:10px}
+.nb-grp .gt2{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.04em}
+.nb-item{display:flex;align-items:center;gap:7px;padding:6px 9px;margin-bottom:5px;border-radius:9px;
+  border:1px solid var(--line2);background:var(--panel2);cursor:pointer;font-size:12.3px;transition:.12s}
+.nb-item:hover{border-color:var(--accent);background:var(--panel);transform:translateX(2px)}
+.nb-item:hover .go{color:var(--accent)}
+.nb-item .nd{width:7px;height:7px;border-radius:50%;flex:0 0 auto;background:var(--nc)}
+.nb-item .nm2{flex:1 1 auto;min-width:0;color:var(--fg2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb-item .rel{flex:0 0 auto;font-size:10px;color:var(--muted);border:1px solid var(--line2);border-radius:999px;padding:0 6px;background:var(--panel)}
+.nb-item .rel.on{color:var(--accent);border-color:var(--accent)}
+.nb-item .go{flex:0 0 auto;font-size:12px;color:var(--muted2)}
+
+/* 文档视图 */
+.doc{flex:1 1 auto;overflow:auto;padding:22px 30px 70px}
+.doc-inner{max-width:1020px}
+.doc h2{font-size:20px;margin:0 0 4px}
+.doc .lead{color:var(--muted);font-size:13.5px;margin:0 0 16px}
+.card{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:15px 17px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card h3{font-size:14px;margin:0 0 9px;display:flex;align-items:center;gap:8px}
+.card h3 .k{width:9px;height:9px;border-radius:3px;background:var(--nc,var(--accent))}
+table{width:100%;border-collapse:collapse;font-size:12.6px}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line2);vertical-align:top}
+th{color:var(--muted);font-size:11.2px;letter-spacing:.06em;font-weight:600}
+tr:last-child td{border-bottom:none}
+td.nm{font-weight:600;white-space:nowrap}
+.kv{display:flex;gap:10px;font-size:12.6px;padding:3px 0}
+.kv b{flex:0 0 92px;color:var(--muted);font-weight:600}
+.flow-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.flow-chips .fc{background:var(--panel2);border:1px solid var(--line2);border-radius:8px;padding:4px 10px;font-size:12.3px}
+.flow-chips .ar{color:var(--muted2)}
+.pit-card{border:1px solid var(--line2);border-left:4px solid var(--lc);border-radius:10px;padding:9px 12px;margin-bottom:8px;background:var(--panel2)}
+.pit-card .hd{font-size:13px;font-weight:700;margin-bottom:4px;color:var(--fg)}
+.pit-card .hd span{font-weight:400;color:var(--muted);font-size:11.5px;margin-left:6px}
+.pit-card .r{font-size:12.5px;color:var(--fg2);display:grid;grid-template-columns:34px 1fr;gap:5px;padding:1px 0}
+.pit-card .r b{color:var(--muted);font-weight:600;font-size:11.5px;padding-top:1px}
+.pit-card .fix{color:var(--green)}
+.pit-card .sym{color:var(--red)}
+.steps{list-style:none;margin:0;padding:0}
+.steps li{display:flex;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line2)}
+.steps li:last-child{border-bottom:none}
+.steps .no{flex:0 0 30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:13px;
+  background:var(--panel2);border:1px solid var(--line2);color:var(--accent)}
+.steps .bd{flex:1 1 auto;min-width:0}
+.steps .bd strong{font-size:13.4px}
+.steps .bd p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.stat{display:flex;gap:10px;align-items:baseline;font-size:12.8px;padding:5px 0;border-bottom:1px dashed var(--line2)}
+.stat:last-child{border-bottom:none}
+.stat b{font-family:var(--mono);color:var(--accent);font-size:13.5px;flex:0 0 88px}
+.stat i{font-style:normal;font-weight:800;color:var(--fg);flex:0 0 auto}
+.qa{margin-bottom:11px;font-size:13px}
+.qa b{display:block;color:var(--accent);margin-bottom:2px}
+.qa p{margin:0;color:var(--fg2);font-size:12.7px}
+.tick{list-style:none;margin:0;padding:0;font-size:12.8px}
+.tick li{padding:4px 0 4px 22px;position:relative;color:var(--fg2)}
+.tick li::before{position:absolute;left:0;content:"⬜"}
+.tick li.done::before{content:"✅"}
+.note{background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--accent);border-radius:9px;padding:10px 13px;font-size:12.7px;color:var(--fg2);margin:10px 0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+@media(max-width:1240px){.inspector{width:330px}.side{width:200px}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">P5</span>
+    <div>
+      <h1>全栈 AI 知识库 · 核心架构图</h1>
+      <p>上传文档 → RAG 问答 ｜ 核心链路 · 模块职责 · 重点坑与解法</p>
+    </div>
+  </div>
+  <button class="icon-btn" id="sideBtn" title="收起 / 展开左侧列表">☰</button>
+  <nav class="tabs" id="tabs">
+    <button data-view="brief">项目速览</button>
+    <button data-view="map" class="active">核心链路</button>
+    <button data-view="modules">模块与坑</button>
+    <button data-view="must">必背与路线</button>
+  </nav>
+  <button class="icon-btn" id="themeBtn" title="深色 / 浅色">🌙</button>
+</header>
+
+<section class="view active" id="view-map">
+  <aside class="side">
+    <h3>场景</h3>
+    <ul class="slist" id="sceneList"></ul>
+    <h3>节点</h3>
+    <input class="searchbox" id="nodeSearch" placeholder="搜节点 / 文件…">
+    <ul class="slist" id="nodeList"></ul>
+  </aside>
+  <div class="stage">
+    <div class="stage-head">
+      <h2 id="sceneTitle">—</h2>
+      <div class="desc" id="sceneDesc"></div>
+      <div class="legend" id="legend"></div>
+      <div class="zoom">
+        <button class="icon-btn" id="zoomOut">−</button>
+        <button class="icon-btn" id="zoomFit">适应</button>
+        <button class="icon-btn" id="zoomIn">＋</button>
+        <span id="zoomVal">100%</span>
+      </div>
+    </div>
+    <div class="canvas-viewport" id="viewport">
+      <div class="canvas" id="canvas">
+        <svg id="edges"></svg>
+        <div id="groups"></div>
+        <div id="nodes"></div>
+        <svg id="edgeLabels"></svg>
+      </div>
+    </div>
+    <div class="player">
+      <button id="btnReset">⏮ 重置</button>
+      <button id="btnPrev">◀ 上一步</button>
+      <button id="btnPlay">▶ 播放全过程</button>
+      <button id="btnNext">下一步 ▶</button>
+      <button id="btnSpeed" title="播放速度">1×</button>
+      <div class="bar"><i id="barFill"></i></div>
+      <span class="step" id="stepInfo">未开始</span>
+      <span class="kbd">← → 可切换步骤</span>
+    </div>
+    <div class="console" id="console"><div class="empty">// 点「播放全过程」走一遍链路，或直接点方块看它的职责 / 为什么这么设计 / 会踩什么坑。</div></div>
+  </div>
+  <aside class="inspector" id="inspector"></aside>
+</section>
+
+<section class="view" id="view-modules">
+  <aside class="side">
+    <h3>模块</h3>
+    <ul class="slist" id="moduleList"></ul>
+  </aside>
+  <div class="doc"><div class="doc-inner" id="moduleDoc"></div></div>
+</section>
+
+<section class="view" id="view-must">
+  <div class="doc"><div class="doc-inner" id="mustDoc"></div></div>
+</section>
+
+<section class="view" id="view-brief">
+  <div class="doc"><div class="doc-inner">
+    <h2>项目速览 · 面试四问</h2>
+    <p class="lead">干什么的 → 核心技术 → 我负责什么 → 问题怎么解决。内容与源码逐条核对过（2026-10-10）。</p>
+
+    <div class="card">
+      <h3><span class="k"></span>① 这是干嘛的</h3>
+      <p style="font-size:13px;margin:0 0 8px">多用户知识库问答系统：上传自己的文档，后台解析入库；提问先查知识库（检索 k=3），<b>文档内查不到就认输不乱编、禁止联网兜底（防幻觉）</b>，只有明显是文档外的常识/资讯才转联网；回答逐字流式推给前端。项目6（企业工作空间）的基础版——用它跑通 RAG + 流式 + 评测核心链路。</p>
+      <div class="kv"><b>目标用户</b><span>多用户，每人独立的知识库与会话，数据互相隔离</span></div>
+      <div class="kv"><b>核心功能</b><span>文档上传解析（202 异步）· 知识库问答（检索 k=3；文档内查不到禁止联网兜底防幻觉，文档外常识才联网）· NDJSON 流式（打字机 + 状态提示）· 评测脚本</span></div>
+      <div class="kv"><b>一句话定位</b><span>把 RAG、流式、评测这条核心链路吃透，再升级出企业版</span></div>
+    </div>
+
+    <div class="card">
+      <h3><span class="k"></span>② 核心技术</h3>
+      <table>
+        <tr><th>层</th><th>选型</th><th>说明</th></tr>
+        <tr><td class="nm">前端</td><td class="nm">React + Vite</td><td>App.jsx 382 行顶层组件：登录态 / 流式读取 / 竞态防护 / 上传，全在里面</td></tr>
+        <tr><td class="nm">后端</td><td class="nm">FastAPI + SQLAlchemy async</td><td>分层规则：路由只接线、服务写业务、仓储只写查询</td></tr>
+        <tr><td class="nm">Agent</td><td class="nm">LangGraph create_agent + DeepSeek</td><td>OpenAI 兼容协议三参数（model / api_key / base_url）；工具：知识库检索 k=3、博查联网搜索 15s 超时；提示词锁死"文档内查不到禁止联网兜底"</td></tr>
+        <tr><td class="nm">流式</td><td class="nm">LangGraph 图 astream + TokenPump</td><td>图用 astream(stream_mode=updates) 跑、模型 token 走 TokenPump 回调泵；tool_call/llm_chunk 两种行汇入同一队列 FIFO；无用户主动停止（仅切会话/断连被动中断）</td></tr>
+        <tr><td class="nm">数据</td><td class="nm">PostgreSQL + Chroma</td><td>三张业务表（用户/会话/文档）；embedding：all-MiniLM-L6-v2（ONNX 免 torch，384 维）；切片 1000 字/片重叠 200</td></tr>
+        <tr><td class="nm">评测</td><td class="nm">10 题自建评测集</td><td>检索 Recall@3=0.90；LLM-as-Judge 正确性 5.0/5、忠实度 4.7/5（红线）</td></tr>
+        <tr><td class="nm">部署</td><td class="nm">Docker Compose 3 服务</td><td>postgres / backend / frontend，端口 5434·8001·5173；healthcheck 手写 urllib + pg_isready</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3><span class="k"></span>③ 我负责的部分</h3>
+      <p style="font-size:13px;margin:0 0 8px">个人项目，从 0 到 1 独立完成。被问"你负责哪块"就按层拆：</p>
+      <table>
+        <tr><th>层</th><th>我做的</th></tr>
+        <tr><td class="nm">数据层</td><td>三表设计；Chroma 集合与 metadata（切片必带 document_id——删除靠它反查）</td></tr>
+        <tr><td class="nm">后端</td><td>上传四道校验（验归属→白名单→大小两道闸→临时落盘）、202 + BackgroundTasks、状态机 processing→ready/failed、删除/回滚幂等、流式接口</td></tr>
+        <tr><td class="nm">Agent</td><td>create_agent 装配、两个工具（文档内禁联网兜底）、TokenPump 回调队列（两种行汇入），无主动停止仅被动中断</td></tr>
+        <tr><td class="nm">前端</td><td>382 行 App.jsx：localStorage 登录态、getReader 攒半行、两层防串台、401 自动登出</td></tr>
+        <tr><td class="nm">评测</td><td>test_set.json + retrieval_eval + generation_eval（LLM-as-Judge）</td></tr>
+        <tr><td class="nm">部署</td><td>docker-compose 三服务 + 两个 Dockerfile + healthcheck</td></tr>
+      </table>
+      <div class="note" style="font-size:12.8px"><b>加分答法：</b>单人项目但按团队工程纪律做——分层规则、Trace、评测闸门、早失败配置，这些正是协作项目最缺的。</div>
+    </div>
+
+    <div class="card">
+      <h3><span class="k"></span>④ 遇到的问题与解决（9 个）</h3>
+
+      <div class="pit-card" style="--lc:var(--red)"><div class="hd">① 183 字回答整段一口吐 <span>streaming 参数</span></div>
+        <div class="r"><b>现象</b>长回答一个分片就整段到达，前端打字机完全失效</div>
+        <div class="r"><b>定位</b>对比短问题正常 → 查模型客户端初始化：create_model 没开流式</div>
+        <div class="r"><b class="fix">修复</b>加 streaming=True。教训：流式链路每层都要显式确认"真的在流"</div>
+      </div>
+      <div class="pit-card" style="--lc:var(--red)"><div class="hd">② 开了 streaming 增量还不对 <span>stream_mode</span></div>
+        <div class="r"><b>现象</b>LangGraph 的 messages 流模式拿不到逐 token 增量</div>
+        <div class="r"><b>定位</b>61 字短问题压测：updates 模式 334 次回调 / 1.70s——这才是真流式</div>
+        <div class="r"><b class="fix">修复</b>换 stream_mode="updates"；用"回调次数 + 耗时"两个数字证明效果（0.16s→1.70s）</div>
+      </div>
+      <div class="pit-card" style="--lc:var(--hot)"><div class="hd">③ 观测上报阻塞主链路 <span>22.2s / 77%</span></div>
+        <div class="r"><b>现象</b>问答总延迟偏高</div>
+        <div class="r"><b>定位</b>Langfuse 本地面板瀑布图：上报占 22.2s、总耗时 77%——SDK 的 flush 是同步的</div>
+        <div class="r"><b class="fix">修复</b>create_task 丢 asyncio 后台；还有第二层坑——后台任务不持引用会被 GC 提前杀掉，用集合 _background_tasks 持引用 + add_done_callback(discard) 自动清</div>
+      </div>
+      <div class="pit-card" style="--lc:var(--red)"><div class="hd">④ 前端流式偶尔 JSON.parse 报错 <span>攒半行</span></div>
+        <div class="r"><b>现象</b>流式偶尔前端解析报错</div>
+        <div class="r"><b>定位</b>TCP 不按应用层消息边界到达，一行 JSON 可能被切成两半（0.3 行 + 1.7 行）</div>
+        <div class="r"><b class="fix">修复</b>getReader + TextDecoder，字节先攒 buffer，按 \n 切，完整行才 parse，残行留下一块拼；DevTools Network 里能看到原始流验证</div>
+      </div>
+      <div class="pit-card" style="--lc:var(--amber)"><div class="hd">⑤ 后台任务报"会话已关闭" <span>会话生命周期</span></div>
+        <div class="r"><b>现象</b>后台文档处理一跑就报数据库会话已关闭</div>
+        <div class="r"><b>定位</b>依赖注入的会话跟着请求走，响应返回就关；后台任务跑在响应之后</div>
+        <div class="r"><b class="fix">修复</b>后台任务第一行自己开 async_session()，用完自己关——"自己开 · 自己关"</div>
+      </div>
+      <div class="pit-card" style="--lc:var(--amber)"><div class="hd">⑥ 回写状态时文档可能已被删 <span>并发语义</span></div>
+        <div class="r"><b>现象</b>后台处理完回写状态，文档可能正被用户删除；后台异常没人接，抛了也只剩日志</div>
+        <div class="r"><b class="fix">修复</b>update_status 查不到就静默跳过而不是抛 404——并发场景下的语义选择："静默跳过才是正确的选择"</div>
+      </div>
+      <div class="pit-card" style="--lc:var(--amber)"><div class="hd">⑦ 删除文档怎么删干净 <span>删除顺序 + 幂等</span></div>
+        <div class="r"><b>定位</b>删一个文档 = 删两个地方（向量库切片 + 数据库记录），顺序不能反：先向量库后数据库</div>
+        <div class="r"><b class="fix">修复</b>按 get(where={"document_id"}) 反查切片 id 再批量删；查不到当空操作（幂等）——所以切片 metadata 必带 document_id；删除也要验归属（文档没有 user_id，绕道它挂的会话验）；请求内失败回滚且幂等；临时文件 finally 删</div>
+      </div>
+      <div class="pit-card" style="--lc:var(--amber)"><div class="hd">⑧ 容器里路径和配置全不对 <span>配置覆盖</span></div>
+        <div class="r"><b>现象</b>容器里 PROJECT_ROOT 向上推 3 层推到 /，数据写丢</div>
+        <div class="r"><b class="fix">修复</b>环境变量覆盖四件套：DATA_DIR=/app/outputs、DATABASE_HOST=postgres、DATABASE_PORT=5432、LANGFUSE_HOST；配置类 BaseSettings 单一真相源 + 必填缺失早失败 + SecretStr 打码；附带坑：精简镜像没 curl，healthcheck 改标准库 urllib，postgres 用 pg_isready</div>
+      </div>
+      <div class="pit-card" style="--lc:var(--accent)"><div class="hd">⑨ 上传解析不了 / 连点串台 <span>前端细节</span></div>
+        <div class="r"><b>定位</b>FormData 手动设 Content-Type 会丢 boundary，后端解析不了 multipart；快速连点两会话有竞态</div>
+        <div class="r"><b class="fix">修复</b>别手动设 Content-Type（浏览器自动生成 boundary）；两层防串台——切会话先 abort() 掐旧流 + selectSeqRef 自增序号，响应对不上号就丢弃</div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<script>
+/* ============================================================
+   场景数据：只保留核心链路，每个节点一句话说清职责
+   kind: client gateway frame route service data external agent memory problem ok
+   ============================================================ */
+const KIND_LABEL = {
+  client:'前端', gateway:'接入', frame:'装配', route:'路由/服务', service:'业务',
+  data:'数据', external:'外部服务', agent:'Agent', memory:'记忆', problem:'异常分支', ok:'收尾'
+};
+
+const SCENES = [
+/* ---------- ① 核心全景 ---------- */
+{
+  id:'overview',
+  title:'① 核心全景：一次提问穿过哪几层',
+  desc:'4 层：前端 → 后端装配 → 业务模块（路由→服务→仓储）→ 数据与外部服务。分层规则：路由只接线、服务写业务、仓储只写查询。',
+  w:1150, h:540,
+  legend:['client','gateway','frame','route','agent','data','memory','external'],
+  groups:[
+    {x:16, y:16, w:240, h:300, k:'client',  t:'① 前端'},
+    {x:286,y:16, w:250, h:390, k:'frame',   t:'② 接入与后端骨架'},
+    {x:566,y:16, w:280, h:390, k:'route',   t:'③ 业务模块（路由 → 服务 → 仓储）'},
+    {x:876,y:16, w:250, h:500, k:'data',    t:'④ 数据与外部服务'}
+  ],
+  nodes:[
+    {id:'browser',x:28,y:50,w:226,h:58,k:'client',t:'用户浏览器',s:'打开 5173'},
+    {id:'react',  x:28,y:120,w:226,h:78,k:'client',t:'React SPA（App.jsx）',s:'管消息 / 会话 / 登录态',f:'src/App.jsx',
+      d:'前端唯一的状态中枢：所有请求从这里发出去，所有结果回填到这里。'},
+    {id:'stream', x:28,y:210,w:226,h:74,k:'client',t:'流式解析 + 打字机',s:'buffer 攒半行 → 逐行 JSON',f:'App.jsx:157-182',
+      d:'把 NDJSON 字节流转成逐字显示。三行关键代码：buffer 累加 → 按 \\n 切 → 最后半行留下次拼。',
+      pit:'网络分包会把一行 JSON 切成两半，拿到半行就 JSON.parse 必崩。'},
+
+    {id:'nginx',  x:298,y:50,w:226,h:64,k:'gateway',t:'Nginx / Vite 反代',s:'静态托管 + /api 转发',f:'nginx.conf · vite.config.js'},
+    {id:'main',   x:298,y:120,w:226,h:66,k:'frame',t:'main.py 应用装配',s:'挂路由 · 中间件 · 异常处理',f:'app/main.py'},
+    {id:'middleware',x:298,y:198,w:226,h:66,k:'frame',t:'中间件 + 全局异常',s:'CORS · 请求日志 · 业务异常→JSON',f:'app/middleware.py'},
+    {id:'config', x:298,y:276,w:226,h:68,k:'frame',t:'config.py 配置中心',s:'Key / 模型 / 路径 / 连接串唯一来源',f:'app/config.py',
+      d:'单一真相来源：所有外部信息只从这里取。必填项缺失时启动就报错（早失败），比运行期才炸好排得多。'},
+
+    {id:'u_auth', x:578,y:50,w:256,h:70,k:'route',t:'用户与鉴权',s:'注册登录 · JWT · 越权一律 404',f:'users/ + security.py',
+      d:'bcrypt 存哈希、JWT 签 24 小时令牌；所有查询都带 user_id 条件，隔离发生在 SQL 里而不是 if 判断里。',
+      pit:'越权返回 403 等于承认"这条记录存在"；统一返回 404 才不会泄露数据规模。'},
+    {id:'u_thread',x:578,y:132,w:256,h:70,k:'route',t:'会话 threads',s:'会话 CRUD · 删会话同时清记忆',f:'threads/*',
+      pit:'只删数据库记录不清 checkpoints.db，复用同一个 thread_id 会读到旧对话。'},
+    {id:'u_doc',  x:578,y:214,w:256,h:70,k:'route',t:'文档上传与索引',s:'校验 → 落盘 → 后台切片向量化',f:'documents/*',
+      d:'请求内只做校验和落盘，重活交给后台任务，立刻返回 202 —— 用户不用等 embedding。'},
+    {id:'u_chat', x:578,y:296,w:256,h:86,k:'agent',t:'聊天 Agent（LangGraph）',s:'ReAct 循环 · 两个工具 · NDJSON 流式',f:'chat/*',
+      d:'先想、需要就调工具、拿到结果再想。工具只有两个：查本会话文档、联网搜索。',
+      pit:'提示词必须写明"文档问题检索不到就认输，禁止用联网结果凑答案"，否则模型会用科普内容糊过去。'},
+
+    {id:'pg',     x:888,y:50,w:226,h:70,k:'data',t:'PostgreSQL 主库',s:'users / threads / documents',f:'docker-compose.yml',
+      pit:'连接串写死 localhost，容器里就指不到 postgres 服务 → 启动 Connection refused。'},
+    {id:'chroma', x:888,y:132,w:226,h:74,k:'data',t:'Chroma 向量库',s:'切片 + 向量（含 embedding 单例）',f:'db/vector_store.py',
+      d:'本地文件型向量库，落盘在 outputs/chroma。入库与查询必须共用同一个 embedding 实例。',
+      pit:'两个 embedding 实例 = 两个向量空间，检索会返回看似正常的垃圾，而且不报任何错。'},
+    {id:'ckpt',   x:888,y:218,w:226,h:66,k:'memory',t:'checkpoints.db',s:'LangGraph 多轮记忆',f:'db/checkpointer.py',
+      pit:'from_conn_string 返回的是异步上下文管理器，必须 async with；参数是纯路径字符串。'},
+    {id:'llm',    x:888,y:296,w:226,h:62,k:'external',t:'DeepSeek LLM',s:'OpenAI 兼容协议',f:'chat/langgraph_agent.py'},
+    {id:'bocha',  x:888,y:370,w:226,h:58,k:'external',t:'BoCha 搜索',s:'文档里搜不到时的兜底'},
+    {id:'langfuse',x:888,y:438,w:226,h:66,k:'external',t:'Langfuse 面板',s:'trace / span / generation',f:'chat/langfuse_handler.py',
+      pit:'回调里抛异常会把 Agent 运行带崩 —— 观测代码全程 try/except 吞掉，永远不当故障源。'}
+  ],
+  edges:[
+    {a:'browser',b:'react',sa:'b',sb:'t'},
+    {a:'react',b:'stream',sa:'b',sb:'t'},
+    {a:'react',b:'nginx',sa:'r',sb:'l',label:'请求'},
+    {a:'nginx',b:'main',sa:'b',sb:'t'},
+    {a:'main',b:'middleware',sa:'b',sb:'t'},
+    {a:'main',b:'config',sa:'l',sb:'l',label:'读配置'},
+    {a:'middleware',b:'u_auth',sa:'r',sb:'l',o1:-24},
+    {a:'middleware',b:'u_thread',sa:'r',sb:'l',o1:-8},
+    {a:'middleware',b:'u_doc',sa:'r',sb:'l',o1:8},
+    {a:'middleware',b:'u_chat',sa:'r',sb:'l',o1:24},
+    {a:'u_auth',b:'pg',sa:'r',sb:'l',mx:852,label:'权限'},
+    {a:'u_thread',b:'pg',sa:'r',sb:'l',mx:858},
+    {a:'u_doc',b:'chroma',sa:'r',sb:'l',mx:864,label:'入库'},
+    {a:'u_chat',b:'ckpt',sa:'r',sb:'l',mx:870,label:'记忆'},
+    {a:'u_chat',b:'llm',sa:'r',sb:'l',mx:856,label:'模型'},
+    {a:'u_chat',b:'bocha',sa:'r',sb:'l',mx:866,dash:1},
+    {a:'u_chat',b:'langfuse',sa:'r',sb:'l',mx:874,dash:1,label:'观测'}
+  ],
+  flow:[
+    {n:'browser',msg:'用户在浏览器输入问题，回车。'},
+    {n:'react',msg:'App.jsx 发请求：没有会话就先建一个，再 POST /api/v1/chat/{thread_id}。'},
+    {n:'nginx',msg:'Nginx（开发期是 Vite 代理）把 /api 转发给后端 —— 浏览器看到的是同源。'},
+    {n:'main',msg:'进入 FastAPI：main.py 只做装配，不写业务。'},
+    {n:'middleware',msg:'中间件记录请求日志 + 补 CORS 头；全局异常处理把业务异常翻译成 JSON。'},
+    {n:'u_auth',msg:'路由层先验 JWT、再验会话归属：不是你的会话 → 404（不告诉对方"其实存在"）。'},
+    {n:'u_chat',msg:'chat 服务打开记忆存档器，拼出 Agent 图，开始 astream 流式执行。'},
+    {n:'llm',msg:'模型先决策：这题我知道吗？不知道就必须调工具，不能瞎编。'},
+    {n:'chroma',msg:'检索工具只搜本会话的切片（where thread_id），cosine 取 top-3。'},
+    {n:'bocha',msg:'文档里确实搜不到、且问题是通用知识时，才允许联网兜底。'},
+    {n:'ckpt',msg:'每轮状态写进 checkpoints.db，下次同一个 thread_id 能读到历史。'},
+    {n:'stream',msg:'回答按 NDJSON 一行一个 JSON 推回来，前端逐行解析并打字机显示。'},
+    {n:'langfuse',msg:'callbacks 把整个执行过程翻成 trace/span/generation 上报面板；流结束后台 flush，不占响应路径。'}
+  ]
+},
+
+/* ---------- ② 上传索引 ---------- */
+{
+  id:'upload',
+  title:'② 上传索引：重活丢后台，请求立刻返回',
+  desc:'核心设计：请求内只做校验和落盘 → 登记 processing → 返回 202 → 后台解析/切片/向量化/入库 → 状态改 ready。异常分两种，处理方式完全不同。',
+  w:1420, h:580,
+  legend:['route','service','ok','problem'],
+  groups:[
+    {x:16,y:30, w:1080,h:126,k:'route',t:'① 请求内（同步）：校验 → 落盘 → 登记 → 立即返回'},
+    {x:16,y:240,w:1080,h:126,k:'service',t:'② 后台任务：解析 → 切片 → 向量化 → 入库'},
+    {x:16,y:450,w:1080,h:126,k:'ok',   t:'③ 收尾'},
+    {x:1120,y:30,w:286,h:346,k:'problem',t:'✗ 异常分支（两种，处理方式不同）'}
+  ],
+  nodes:[
+    {id:'c1',x:30,y:60,w:240,h:76,k:'route',t:'① 校验三关',s:'会话归属 → 扩展名 → 文件大小',f:'documents/routes.py:61-92',
+      d:'顺序很重要：先验权限（不是你的会话直接 404，文件都不读），再验类型，最后验大小。'},
+    {id:'c2',x:300,y:60,w:240,h:76,k:'route',t:'② 落盘 outputs/tmp',s:'请求流只能读一次',f:'documents/routes.py:84'},
+    {id:'c3',x:570,y:60,w:240,h:76,k:'route',t:'③ 登记 processing',s:'拿到 document_id',f:'documents/service.py:37',
+      d:'所有后续步骤都靠这个 id 找到对象，回滚也靠它。'},
+    {id:'c4',x:840,y:60,w:240,h:76,k:'route',t:'④ 返回 202 + 预约后台',s:'background_tasks.add_task',f:'documents/routes.py:100',
+      d:'202 的语义就是"我收到了，但还没处理完"。用户不用等 embedding 跑完。'},
+
+    {id:'b1',x:840,y:270,w:240,h:76,k:'service',t:'⑤ 后台：解析文本',s:'PDF / docx / txt 各用各的解析器',f:'db/vector_store.py:47'},
+    {id:'b2',x:570,y:270,w:240,h:76,k:'service',t:'⑥ 切片',s:'1000 字一段，重叠 200 字',f:'db/vector_store.py:26',
+      pit:'v1 是按字符硬切，中文没有空格容易切坏句子；正规做法是 RecursiveCharacterTextSplitter（按标点/语义边界）。'},
+    {id:'b3',x:300,y:270,w:240,h:76,k:'service',t:'⑦ 向量化',s:'走全局唯一的 embedding 单例',f:'db/vector_store.py:72'},
+    {id:'b4',x:30,y:270,w:240,h:76,k:'service',t:'⑧ Chroma 入库',s:'ids + metadatas + 原文 + 向量',f:'db/vector_store.py:74',
+      d:'四件套一起写：id 用来删、metadata 用来做隔离、原文用来回灌给模型。'},
+
+    {id:'e1',x:30,y:480,w:240,h:76,k:'ok',t:'⑨ 状态 → ready',s:'前端凭这个字段知道能提问了',f:'documents/service.py:51'},
+    {id:'e2',x:300,y:480,w:240,h:76,k:'ok',t:'⑩ 删临时文件',s:'finally 里 unlink（存在才删）',f:'documents/routes.py:38'},
+    {id:'e3',x:570,y:480,w:240,h:76,k:'ok',t:'状态机：processing → ready / failed',s:'失败原因写在 error_message',
+      d:'为什么要有状态字段？因为请求早就返回了，用户只能靠轮询数据库里的状态知道处理结果。'},
+
+    {id:'x1',x:1150,y:60,w:240,h:76,k:'problem',t:'✗ 请求内异常 → 回滚',s:'清向量切片 + 删记录 + 删临时文件',f:'documents/routes.py:110',
+      d:'请求内失败说明后台任务没接管，半成品必须自己清干净。',
+      pit:'回滚前必须加 `except HTTPException: raise`，否则 400/413 会被下面的 except Exception 吞成 500，前端再也拿不到真实原因。'},
+    {id:'x2',x:1150,y:270,w:240,h:76,k:'problem',t:'✗ 后台异常 → 写 failed',s:'status="failed" + error_message',f:'documents/routes.py:33',
+      d:'后台异常不能往外抛：请求早就返回了，异常没有接收方，只能烂在日志里。必须落到数据库字段上让用户看得见。'}
+  ],
+  edges:[
+    {a:'c1',b:'c2',sa:'r',sb:'l'},{a:'c2',b:'c3',sa:'r',sb:'l'},{a:'c3',b:'c4',sa:'r',sb:'l'},
+    {a:'c4',b:'b1',sa:'b',sb:'t'},
+    {a:'b1',b:'b2',sa:'l',sb:'r'},{a:'b2',b:'b3',sa:'l',sb:'r'},{a:'b3',b:'b4',sa:'l',sb:'r'},
+    {a:'b4',b:'e1',sa:'b',sb:'t'},
+    {a:'e1',b:'e2',sa:'r',sb:'l'},{a:'e2',b:'e3',sa:'r',sb:'l'},
+    {a:'c4',b:'x1',sa:'r',sb:'l',dash:1,label:'任一步异常'},
+    {a:'b1',b:'x2',sa:'r',sb:'l',dash:1,label:'解析/入库失败'},
+    {a:'x2',b:'e3',sa:'b',sb:'t',dash:1,label:'写 failed 落库',my:410}
+  ],
+  flow:[
+    {n:'c1',msg:'校验三关：会话是不是你的（否则 404）→ 扩展名白名单 → 文件大小 ≤10MB（file.size 预判 + 落盘后 stat 兜底）。'},
+    {n:'c2',msg:'临时落盘到 outputs/tmp/ —— 文件流只能读一次，后面解析要再读它。'},
+    {n:'c3',msg:'登记一条 Document 记录，status=processing，拿到 document_id。'},
+    {n:'c4',msg:'把重活挂到 BackgroundTasks 上，立刻返回 202。'},
+    {n:'b1',msg:'后台开始解析：PDF 用 pypdf、docx 用 docx2txt、txt 直接读。'},
+    {n:'b2',msg:'切片：1000 字一段、重叠 200 字，防止一句话被切开后两边都搜不到。'},
+    {n:'b3',msg:'向量化：走全局唯一的 embedding 单例（入库和查询必须同款）。'},
+    {n:'b4',msg:'Chroma.add 四件套入库：id / metadata / 原文 / 向量。'},
+    {n:'e1',msg:'状态改 ready —— 前端凭这个字段知道"可以基于它提问了"。'},
+    {n:'e2',msg:'finally 里删掉临时文件。'},
+    {n:'x1',msg:'[异常分支] 请求内任何一步失败：清向量切片 + 删数据库记录 + 删临时文件，然后返回 500，不留僵尸文档。'},
+    {n:'x2',msg:'[异常分支] 后台失败：不能抛（没人接），写 status=failed + error_message 让用户看得见。'}
+  ]
+},
+
+/* ---------- ③ RAG 问答 ---------- */
+{
+  id:'agent',
+  title:'③ RAG 问答：Agent 循环 + 流式回传',
+  desc:'一次提问的完整旅程：验权限 → 拼 Agent 图 → ReAct 循环（模型决策 / 工具检索）→ 逐字流式回传 → 前端打字机。',
+  w:1180, h:540,
+  legend:['client','route','agent','data','external','memory'],
+  groups:[
+    {x:16,y:16,w:240,h:300,k:'client',t:'① 前端'},
+    {x:286,y:16,w:250,h:400,k:'route',t:'② 路由 → 服务'},
+    {x:566,y:16,w:270,h:490,k:'agent',t:'③ LangGraph Agent 循环'},
+    {x:866,y:16,w:290,h:470,k:'data',t:'④ 工具 · 模型 · 记忆 · 观测'}
+  ],
+  nodes:[
+    {id:'f1',x:28,y:60,w:226,h:66,k:'client',t:'用户提问',s:'「文档里的暗号是什么？」'},
+    {id:'f2',x:28,y:140,w:226,h:80,k:'client',t:'handleSend',s:'没会话先建，再发消息',f:'App.jsx:102-202',
+      pit:'切会话时必须 AbortController.abort() 掐断正在跑的流，否则旧回答会写进新会话气泡里。'},
+    {id:'f3',x:28,y:234,w:226,h:80,k:'client',t:'NDJSON 逐行解析 → 打字机',s:'tool_call 提示"正在查资料…"',f:'App.jsx:164-182'},
+
+    {id:'b1',x:298,y:60,w:226,h:70,k:'route',t:'鉴权 + 验会话',s:'没登录 401；会话不是你的 404',f:'chat/routes.py:20-27'},
+    {id:'b2',x:298,y:144,w:226,h:84,k:'route',t:'chat_stream（async 生成器）',s:'队列把两路流合并后 yield',f:'chat/service.py',
+      d:'一边被前端消费一边执行：记忆连接的生命周期必须覆盖整个流式过程；图在后台任务里跑（updates），模型 token 从队列里取。'},
+    {id:'b3',x:298,y:242,w:226,h:80,k:'route',t:'NDJSON 协议翻译',s:'updates→tool_call，messages→llm_chunk',f:'chat/schemas.py',
+      d:'收到 ("messages", 消息) 翻成 llm_chunk，收到 ("updates", 快照) 翻成 tool_call / tool_result —— 协议形状没变，前端零改动。'},
+    {id:'b4',x:298,y:334,w:226,h:66,k:'agent',t:'TokenPump（token 泵）',s:'模型每吐一个字就丢进队列',f:'chat/service.py',
+      d:'一个 AsyncCallbackHandler：同时挂到模型和运行 config 上，on_llm_new_token 一响就把非空 token 放进 asyncio.Queue，chat_stream 那边边取边 yield。',
+      pit:'on_llm_new_token 会送来大量空 token（工具调用增量），不过滤就会往 NDJSON 流里灌空行。'},
+
+    {id:'c1',x:578,y:60,w:246,h:70,k:'memory',t:'打开记忆存档器',s:'AsyncSqliteSaver（async with）',f:'db/checkpointer.py'},
+    {id:'c2',x:578,y:144,w:246,h:80,k:'agent',t:'拼出 Agent 图',s:'模型 + 工具 + 系统提示词 + 记忆',f:'chat/langgraph_agent.py:26',
+      pit:'新版 API 改名：create_react_agent → langchain.agents.create_agent，prompt → system_prompt，照着旧教程写直接报错。'},
+    {id:'c3',x:578,y:238,w:246,h:76,k:'agent',t:'两路并发：updates + token 泵',s:'图跑 updates，token 走回调进队列',f:'chat/service.py',
+      d:'为什么要两路？updates 给"正在查资料"这类节点动作；模型 token 只能靠回调回流才拿得到。两条流汇进同一个队列，天然按真实发生顺序排好。',
+      pit:'别用 stream_mode="messages" 收 token：create_agent 的 model 节点是 trace=False，token 不会变成 messages 事件（150 字的回答只给 1 个 chunk）。'},
+    {id:'c4',x:578,y:328,w:246,h:80,k:'agent',t:'model 节点：先想',s:'读系统提示 + 历史 + 本轮问题',f:'chat/prompts.py',
+      d:'提示词写死了工具优先级和三条硬约束：不许编、同一工具最多重试一次、历史里的"搜不到"不算数。'},
+    {id:'c5',x:578,y:422,w:246,h:70,k:'agent',t:'分支：调工具 or 直接答',s:'有 tool_calls 吗？',f:'chat/schemas.py:64'},
+
+    {id:'d1',x:878,y:60,w:266,h:80,k:'data',t:'检索工具 retrieve_user_documents',s:'thread_id 从 config 取，k=3',f:'chat/tools.py:8',
+      pit:'工具函数签名里必须声明 config: RunnableConfig，否则拿不到当前 thread_id，检索会搜错会话或永远为空。'},
+    {id:'d2',x:878,y:152,w:266,h:70,k:'external',t:'Chroma 检索 top-3',s:'cosine + where thread_id',f:'db/vector_store.py:82',
+      pit:'k 大于库里实际片数会直接抛错，必须先 k = min(k, col.count())。'},
+    {id:'d3',x:878,y:234,w:266,h:70,k:'external',t:'DeepSeek 逐字生成',s:'streaming=True 必须显式传',f:'chat/langgraph_agent.py',
+      pit:'create_model 的 streaming 默认 False，而 langchain-core 对"显式传 False"是硬禁用 —— 漏传就一个 token 回调都没有。'},
+    {id:'d4',x:878,y:316,w:266,h:70,k:'memory',t:'checkpoints.db 落盘',s:'每轮状态写盘，重启记忆还在'},
+    {id:'d5',x:878,y:398,w:266,h:70,k:'external',t:'Langfuse 上报 trace',s:'回调把执行过程翻译成观测对象',f:'chat/langfuse_handler.py'}
+  ],
+  edges:[
+    {a:'f1',b:'f2',sa:'b',sb:'t'},{a:'f2',b:'f3',sa:'b',sb:'t'},
+    {a:'f2',b:'b1',sa:'r',sb:'l',label:'提问'},
+    {a:'b1',b:'b2',sa:'b',sb:'t'},{a:'b2',b:'b3',sa:'b',sb:'t'},
+    {a:'b2',b:'b4',sa:'r',sb:'r',label:'挂回调'},
+    {a:'c4',b:'b4',sa:'l',sb:'r',label:'逐字'},
+    {a:'b3',b:'f3',sa:'l',sb:'r',label:'流式'},
+    {a:'b2',b:'c1',sa:'r',sb:'l',mx:551},
+    {a:'c1',b:'c2',sa:'b',sb:'t'},{a:'c2',b:'c3',sa:'b',sb:'t'},
+    {a:'c3',b:'c4',sa:'b',sb:'t'},{a:'c4',b:'c5',sa:'b',sb:'t'},
+    {a:'c5',b:'d1',sa:'r',sb:'l',mx:845,label:'要查文档'},
+    {a:'d1',b:'d2',sa:'l',sb:'l',label:'检索'},
+    {a:'c4',b:'d3',sa:'r',sb:'l',mx:857,label:'LLM'},
+    {a:'c1',b:'d4',sa:'r',sb:'l',mx:863,label:'记忆'},
+    {a:'c2',b:'d5',sa:'r',sb:'l',mx:869,dash:1,label:'观测'},
+    {a:'d2',b:'c4',sa:'l',sb:'r',mx:848,dash:1,label:'片段回灌'},
+    {a:'c5',b:'c4',sa:'l',sb:'l',mx:556,dash:1,label:'回灌再想'}
+  ],
+  flow:[
+    {n:'f1',msg:'用户在输入框敲下问题。'},
+    {n:'f2',msg:'handleSend：先把自己这条消息上屏；没有 thread_id 就先建一个会话。'},
+    {n:'b1',msg:'POST /chat/{thread_id}：验 JWT → 验会话归属（不是你的 404）→ 自动用首条消息起标题。'},
+    {n:'b2',msg:'chat_stream 是 async 生成器：async with 打开记忆连接，生命周期覆盖整个流。'},
+    {n:'c1',msg:'打开 checkpoints.db —— 这个 thread 的历史在不在。'},
+    {n:'c2',msg:'拼图：ChatOpenAI + 两个工具 + SYSTEM_PROMPT + checkpointer。'},
+    {n:'c3',msg:'两路并发：图用 stream_mode="updates" 在后台任务里跑（拿工具调用），模型 token 由 TokenPump 泵进同一个队列。'},
+    {n:'c4',msg:'model 节点读系统提示 + 历史 + 本轮问题，决定下一步。'},
+    {n:'c5',msg:'分支：吐了 tool_calls 就去调工具，没有就直接给答案。'},
+    {n:'d1',msg:'检索工具：从 config 拿 thread_id → search_chunks(query, k=3)。'},
+    {n:'d2',msg:'Chroma cosine 取 top-3，where 过滤保证只搜本会话的切片。'},
+    {n:'c4',msg:'片段回灌给模型 —— 这就是 RAG 的"喂证据"，再想一轮。'},
+    {n:'d3',msg:'DeepSeek 开始逐字吐字（streaming=True，漏传就没有回调）。'},
+    {n:'b4',msg:'[token 泵] 模型每吐一个字，回调就把它丢进队列；chat_stream 那边一收到就立刻 yield 出去。'},
+    {n:'d4',msg:'本轮状态写进 checkpoints.db，下次同 thread_id 能读到历史。'},
+    {n:'d5',msg:'回调把 chain / llm / tool 事件翻译成 trace / span / generation；流结束后台 flush，不等面板。'},
+    {n:'b3',msg:'ChatStreamResponse 做协议翻译：一行一个 JSON 推给前端。'},
+    {n:'f3',msg:'前端按 \\n 切行、逐行解析：先看到"AI 正在查资料…"，再看到逐字蹦出的答案。'}
+  ]
+}
+];
+
+/* ============================================================
+   每个节点的关键代码（只贴能说明问题的那几行）
+   键 = 场景id:节点id
+   ============================================================ */
+const NODE_CODE = {
+
+/* ---- ① 核心全景 ---- */
+'overview:react': `const [messages, setMessages] = useState([])
+const [threadId, setThreadId] = useState('')
+const [aiText,   setAiText]   = useState('')   // 正在生成的回复
+const [token,    setToken]    = useState(() => localStorage.getItem('token') || '')`,
+
+'overview:stream': `buffer += decoder.decode(value, { stream: true })
+const lines = buffer.split('\\n')
+buffer = lines.pop()          // 最后半行留到下次拼
+for (const line of lines) {
+  if (!line.trim()) continue
+  const obj = JSON.parse(line)
+}`,
+
+'overview:nginx': `location /api/ {
+  proxy_pass http://backend:8000;   # backend = compose 服务名
+  proxy_buffering off;              # 流式关键，不关就攒成一坨再发
+  proxy_read_timeout 300s;          # AI 回复慢，超时放宽
+}`,
+
+'overview:main': `app = FastAPI(title="AI 知识库", lifespan=lifespan)
+register_middleware(app)                    # CORS + 请求日志
+register_exception_handlers(app)            # 业务异常 → JSON
+app.include_router(chat_router, prefix=f"{version_prefix}/chat", tags=["CHAT"])`,
+
+'overview:middleware': `@app.middleware("http")
+async def request_logger(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    logger.info(f"{request.method} {request.url.path} -> {response.status_code}")`,
+
+'overview:config': `class Settings(BaseSettings):
+    api_key: SecretStr = Field(alias="DEEPSEEK_API_KEY")   # 无默认值 = 必填
+    database_host: str = "localhost"                       # 容器里由 compose 注入
+    model_config = SettingsConfigDict(env_file=PROJECT_ROOT / ".env")
+
+settings = Settings()   # 缺必填项 → 构造时就报错（早失败）`,
+
+'overview:u_auth': `def get_current_user(credentials = Depends(bearer_scheme)) -> str:
+    if credentials is None:
+        raise HTTPException(401, "未登录：缺少 Authorization 头")
+    payload = jwt.decode(credentials.credentials, settings.jwt_secret,
+                         algorithms=["HS256"])   # 验签 + 查过期
+    return payload["sub"]`,
+
+'overview:u_thread': `stmt = select(Thread).where(Thread.id == thread_id,
+                                 Thread.user_id == user_id)   # 隔离写在 SQL 里
+result = await session.execute(stmt)
+return result.scalar_one_or_none()      # 查不到返回 None，不抛异常`,
+
+'overview:u_doc': `if file.size and file.size > MAX_UPLOAD_BYTES:      # 先预判，不白写磁盘
+    raise HTTPException(413, "文件超过 10MB 上限")
+
+background_tasks.add_task(process_document, new_document.id, temp_path, thread_id)
+return DocumentUploadResponse(...)                  # status_code=202`,
+
+'overview:u_chat': `async def chat_stream(thread_id: UUID, prompt_input: PromptInput):
+    async with get_checkpointer() as checkpointer:
+        queue, pump = asyncio.Queue(), TokenPump(...)
+        graph = build_retrieval_graph(checkpointer, callbacks=[langfuse_handler, pump])
+        task = asyncio.create_task(_run_graph())      # 图跑 updates → 进队列
+        while True:
+            kind, payload = await queue.get()         # token 也从同一个队列出
+            ...
+            yield (kind, (payload, {})) if kind == "messages" else (kind, payload)`,
+
+'overview:pg': `environment:
+  DATA_DIR: /app/outputs
+  DATABASE_HOST: postgres   # 容器里的 localhost 指容器自己，必须用服务名
+volumes:
+  - ./outputs:/app/outputs`,
+
+'overview:chroma': `_collection = _client.get_or_create_collection(
+    name="knowledge_base",
+    metadata={"hnsw:space": "cosine"},     # 默认 L2，必须改成 cosine
+)
+vectors = embeddings.embed(chunks)         # 与查询共用同一个实例`,
+
+'overview:ckpt': `def get_checkpointer() -> AsyncIterator[AsyncSqliteSaver]:
+    path = settings.data_dir / "checkpoints.db"
+    return AsyncSqliteSaver.from_conn_string(str(path))
+    # 返回的是【异步上下文管理器】，必须 async with；参数是纯路径，不能带前缀`,
+
+'overview:llm': `return ChatOpenAI(
+    model=settings.model_name,          # deepseek-v4-flash
+    api_key=settings.api_key,
+    base_url=settings.model_base_url,   # https://api.deepseek.com/v1
+    streaming=streaming,
+    callbacks=callbacks,                # 回调直接绑模型，避免 config 不继承
+)`,
+
+'overview:bocha': `async with httpx.AsyncClient(timeout=15) as client:
+    resp = await client.post(
+        "https://api.bochaai.com/v1/web-search",
+        headers={"Authorization": f"Bearer {settings.bocha_api_key}"},
+        json={"query": query, "summary": True, "count": 5},
+    )
+    resp.raise_for_status()             # 先判失败，别把错误响应当结果解析`,
+
+'overview:langfuse': `def on_chain_start(self, serialized, inputs, *, run_id, parent_run_id=None, **kwargs):
+    try:
+        obs = self._client.trace(name="agent", input=inputs) if parent_run_id is None \\
+              else self._observations[parent_run_id].span(...)
+    except Exception:
+        pass        # 回调绝不能炸，否则会把 Agent 运行也带崩`,
+
+/* ---- ② 上传索引 ---- */
+'upload:c1': `if file.filename is None or Path(file.filename).suffix.lower() not in SUPPORTED_EXTENSIONS:
+    raise HTTPException(
+        status_code=400,
+        detail=f"不支持的文件类型，允许: {', '.join(sorted(SUPPORTED_EXTENSIONS))}",
+    )
+
+if file.size and file.size > MAX_UPLOAD_BYTES:   # 客户端声明的体积，先拦一道
+    raise HTTPException(413, "文件超过 10MB 上限")`,
+
+'upload:c2': `with open(temp_path, "wb") as buffer:
+    shutil.copyfileobj(file.file, buffer)
+
+if temp_path.stat().st_size > MAX_UPLOAD_BYTES:     # 落盘后的真实体积，最终裁决
+    raise HTTPException(413, "文件超过 10MB 上限")`,
+
+'upload:c3': `document_data = DocumentBase(file_name=file.filename, thread_id=thread_id)
+new_document = await document_service.insert_document(document_data, session)
+document_id = new_document.id      # 后面的后台任务、异常回滚都靠它`,
+
+'upload:c4': `background_tasks.add_task(process_document, new_document.id, temp_path, thread_id)
+logger.info(f"已接收上传，后台处理中: {file.filename}")
+return DocumentUploadResponse(document_id=document_id, ...)   # 立即返回 202`,
+
+'upload:b1': `if suffix == ".pdf":
+    return "\\n".join(page.extract_text() or "" for page in PdfReader(file_path).pages)
+elif suffix == ".docx":
+    return docx2txt.process(file_path)
+elif suffix == ".txt":
+    return file_path.read_text(encoding="utf-8")`,
+
+'upload:b2': `chunks, start = [], 0
+while start < len(text):
+    end = start + chunk_size          # 1000 字一段
+    chunks.append(text[start:end])
+    if end >= len(text): break
+    start = end - chunk_overlap       # 回退 200 字做重叠，防止切断句子`,
+
+'upload:b3': `vectors = embeddings.embed(chunks)   # list[str] → list[list[float]]
+
+# 入库和查询走的是同一个 embeddings 实例（模块级单例）
+# 换模型 = 换向量空间 → 库里旧向量全部失效`,
+
+'upload:b4': `col.add(
+    ids=ids,                                    # 每片一个 uuid，删片时用
+    metadatas=[{"document_id": ..., "thread_id": ...} for _ in chunks],
+    documents=chunks,                           # 原文，回灌给模型
+    embeddings=vectors,
+)`,
+
+'upload:e1': `await document_service.update_status(document_id, "ready", session)
+
+# 状态机：processing → ready / failed
+# 前端凭这个字段知道"能不能提问了"`,
+
+'upload:e2': `finally:
+    # 临时文件的生命周期延伸到这：后台读完才删
+    if temp_path.exists():
+        temp_path.unlink()`,
+
+'upload:e3': `status: Mapped[str] = mapped_column(String(20), default="processing")
+# 失败原因（成功时为 NULL）
+error_message: Mapped[str | None] = mapped_column(String(500), nullable=True)`,
+
+'upload:x1': `except HTTPException:
+    raise          # 400/413 原样透传，别被下面吞成 500
+except Exception as e:
+    if document_id is not None:                  # 回滚三件套
+        await delete_document_chunks(document_id)   # 清向量切片
+        await document_service.delete_document(document_id, session)
+    if temp_path.exists():
+        temp_path.unlink()
+    raise HTTPException(500, f"上传失败: {file.filename}") from e`,
+
+'upload:x2': `except Exception as e:
+    # 后台任务没有接收方，异常不能往外抛 → 写到数据库字段上
+    await document_service.update_status(document_id, "failed", session,
+                                          error_message=str(e)[:500])
+    logger.exception("文档处理失败")`,
+
+/* ---- ③ RAG 问答 ---- */
+'agent:f2': `const controller = new AbortController()
+streamAbortRef.current = controller      # 切会话时可以 abort 它，防串台
+let res = await postChat(currentToken)   # 没会话就先 POST /threads 拿 id
+const reader = res.body.getReader()`,
+
+'agent:f3': `if (obj.type === 'tool_call') {
+  setAiThinking('AI 正在查资料…')
+} else if (obj.type === 'llm_chunk') {
+  if (!started) { started = true; setAiThinking('') }   # 收到首字，关掉提示
+  answer += obj.content
+  setAiText(answer)
+}`,
+
+'agent:b1': `thread = await thread_service.get_thread(thread_id, uuid.UUID(user), session)
+# 不存在 / 不是你的 → 404，避免拿假 id 静默建出奇怪状态
+
+if thread.title == "New Chat":                     # 自动起标题
+    thread.title = prompt_input.prompt[:30]
+    await session.commit()`,
+
+'agent:b2': `async def chat_stream(thread_id: UUID, prompt_input: PromptInput) -> AsyncIterator:
+    async with get_checkpointer() as checkpointer:        # 连接靠 yield 保活
+        queue: asyncio.Queue = asyncio.Queue()
+        pump = TokenPump(queue)
+        graph = build_retrieval_graph(checkpointer, callbacks=[langfuse_handler, pump])
+        task = asyncio.create_task(_run_graph())
+        try:
+            while True:
+                kind, payload = await queue.get()          # 两路流在这里汇合
+                if kind == "__end__": break
+                yield (kind, (payload, {})) if kind == "messages" else (kind, payload)
+        finally:
+            if not task.done(): task.cancel()              # 前端断开就别让 Agent 空转
+            langfuse_client.flush()`,
+
+'agent:b3': `async for stream_mode, chunk in astream:
+    if stream_mode == "messages":
+        yield self._handle_messages_stream(chunk)      # 模型蹦的字（来自 TokenPump）
+    elif stream_mode == "updates":
+        yield from self._handle_updates_stream(chunk)  # 节点动作 → tool_call / tool_result`,
+
+'agent:c1': `async with get_checkpointer() as checkpointer:
+    ...
+# 进入 → 打开 SQLite 连接；退出 → 自动关闭
+# 生命周期必须覆盖整个流式输出过程，所以由调用方包一层`,
+
+'agent:c2': `return create_agent(
+    model=model,
+    tools=tools,                  # 两个工具
+    system_prompt=SYSTEM_PROMPT,  # 新 API：prompt → system_prompt
+    checkpointer=checkpointer,    # 会话记忆
+)`,
+
+'agent:c3': `async def _run_graph() -> None:
+    """后台跑图：节点动作进队列，跑完发结束标记。"""
+    try:
+        async for chunk in graph.astream(..., stream_mode="updates"):
+            await queue.put(("updates", chunk))    # 工具调用 / 节点动作
+    finally:
+        await queue.put(("__end__", None))
+
+# token 那一路不走这里：TokenPump 回调直接 put(("messages", 消息))
+# 两条流进的是同一个队列 → 顺序就是真实发生顺序，工具调用和回答不会错位`,
+
+'agent:c4': `SYSTEM_PROMPT = """
+你是智能 RAG Agent，只能按以下决策流程回答用户问题：
+1. 分析问题 → 评估自己是否知道答案
+2. 知道 → 直接回答
+3. 不知道 → 必须用工具查，不能瞎编
+
+关键约束：
+- 问题关于用户文档、且检索不到时，**禁止**用 web_search 兜底
+- 同一工具最多重试 1 次
+"""`,
+
+'agent:c5': `if isinstance(message, AIMessage):
+    if message.tool_calls:                 # 模型决定调工具
+        for tool_call in message.tool_calls:
+            yield json.dumps({"type": "tool_call", "name": ..., "args": ...}) + "\\n"
+elif isinstance(message, ToolMessage):     # 工具执行完的结果
+    yield json.dumps({"type": "tool_result", "name": message.name, ...}) + "\\n"`,
+
+'agent:d1': `@tool
+async def retrieve_user_documents(query: str,
+                                  config: RunnableConfig) -> str:
+    """回答关于用户上传文档的问题时使用。"""   # docstring 就是给模型的说明书
+    thread_id = config["configurable"].get("thread_id")  # 少了 config 就取不到
+    chunks = await search_chunks(query, thread_id, k=3)
+    return "\\n\\n".join(chunks) if chunks else "No relevant documents"`,
+
+'agent:d2': `k = min(k, col.count())      # 库里片数不够 k 会直接报错
+hits = col.query(
+    query_embeddings=vector,
+    n_results=k,
+    where={"thread_id": str(thread_id)},   # 只搜本会话的文档
+)`,
+
+'agent:b4': `class TokenPump(AsyncCallbackHandler):
+    """把模型的逐字输出泵进队列，让 chat_stream 一边执行一边往外发。"""
+    async def on_llm_new_token(self, token: str, *, chunk=None, **kwargs):
+        message = getattr(chunk, "message", None) or AIMessageChunk(content=token)
+        if getattr(message, "content", ""):     # 空 token（工具调用增量）直接丢
+            await self._queue.put(("messages", message))`,
+
+'agent:d3': `# chat/langgraph_agent.py —— streaming=True 必须显式传
+model = create_model(streaming=True, callbacks=callbacks)
+
+# create_model 的默认值是 False，而 langchain-core 里
+# "streaming in model_fields_set and streaming is False" 会被判定为【硬禁用】，
+# 于是 on_llm_new_token 一次都不会触发 —— 前端就没有打字机。`,
+
+'agent:d4': `config = RunnableConfig(configurable={"thread_id": str(thread_id), "checkpoint_ns": ""})
+checkpoint_tuple = await checkpointer.aget_tuple(config)   # 旧 API：aget
+all_messages = checkpoint_tuple.checkpoint.get("channel_values", {}).get("messages", [])`,
+
+'agent:d5': `config = RunnableConfig(..., callbacks=[langfuse_handler])
+
+finally:
+    langfuse_client.flush()   # 流结束 / 中断都把积压的 trace 批量推给面板`
+
+};
+
+/* ============================================================
+   可调参数：只写在真正有参数可调、且调了会明显影响结果的节点上
+   p = 当前值 · w = 这个参数管什么 · tips = 往哪调、代价是什么
+   ============================================================ */
+const NODE_TUNE = {
+
+'agent:d2': [{ p:'k = 3', w:'一次检索喂给模型几段（top-k）', tips:[
+  '调小到 1~2：上下文干净、token 便宜，但答案散落在多段时会漏（Recall 掉）',
+  '调大到 6~8：召回更全，但噪声变多，正确答案容易被挤出前几名（MRR 掉，还更贵）',
+  '调 k 必须同步改评估脚本里的 K —— 两边不一致，测的就不是线上那套系统',
+  '0.90 / 0.70 这两个基线都是在 k=3 下测出来的，改 k 要重新测一遍才算数'
+]}],
+'agent:d1': [{ p:'k=3', w:'工具一次取几段', tips:[
+  'k 属于检索参数：改完必须重跑 Recall@k / MRR，别凭感觉说"好像变好了"',
+  '同样的力气花在工具 docstring 上（写清何时调用、查询词怎么组织）往往比调 k 更有效',
+  '测试集只有 10 条时，调参很容易过拟合这 10 条 —— 先扩测试集再调'
+]}],
+
+'agent:d3': [{ p:'streaming=True（必须显式传）', w:'流式输出', tips:[
+  '漏传 = 用默认 False，而 langchain-core 判定"显式 False"为硬禁用 → on_llm_new_token 一次都不触发',
+  '关掉流式：前端要等整段生成完才显示，长回答像卡死；开启后首字延迟低得多',
+  '流式下没法做完整的输出校验（内容是边生成边发的），要过滤敏感词得另想办法'
+]}],
+
+'agent:c3': [{ p:'stream_mode="updates" + TokenPump 回调', w:'两路流怎么合', tips:[
+  'updates 那一路：工具调用 / 节点动作（前端"正在查资料…"就是它来的）',
+  'token 那一路：模型逐字输出，走 AsyncCallbackHandler 进同一个队列',
+  '别改成 stream_mode="messages"：这里 create_agent 的 model 节点 trace=False，token 不会变成 messages 事件',
+  '两路共用一个队列 → 顺序就是真实发生顺序，工具调用和回答不会错位'
+]},
+{ p:'recursion_limit（默认 25，本项目未改）', w:'Agent 最多循环几轮', tips:[
+  '这是防死循环的保险丝：调小能防止"模型反复调同一个工具"烧 token',
+  '调太小会让需要多步推理的问题答不完，直接抛 GraphRecursionError',
+  '真出现反复调用，通常不是 limit 的问题，而是提示词没写"同一工具最多重试 1 次"'
+]}],
+
+'agent:c4': [{ p:'同一工具最多重试 1 次', w:'提示词里的"旋钮"', tips:[
+  '重试次数调大：复杂问题更容易搜到，但模型可能陷进"换个说法再搜"的循环',
+  '工具优先级（先查文档 → 才允许联网）也能调：收紧更保守，放宽更灵活',
+  '改提示词是最便宜的调参：不用重建向量库、不用重跑 embedding，改完直接对比评估结果'
+]}],
+
+'overview:llm': [{ p:'temperature 未显式设置（用服务端默认）', w:'生成风格', tips:[
+  '要更稳、少跑题：显式 temperature=0.2~0.3，代价是措辞变模板化',
+  '评估脚本里固定用 0.2 —— 评估要可复现；对话场景没必要这么死',
+  '换更强的 model_name：质量↑、延迟和费用也↑，先用评估基线量一下再决定'
+]}],
+
+'overview:chroma': [{ p:'hnsw:space = cosine', w:'距离度量', tips:[
+  'cosine 只看方向，L2 还看长度 → 语义检索必须用 cosine，否则长文本被系统性压低',
+  '向量维度由 embedding 模型决定（MiniLM 384 / bge-small-zh 512），不能手调',
+  '换模型 = 换向量空间：必须重建整个集合，旧向量全部作废'
+]}],
+'overview:bocha': [{ p:'count = 5（summary=True）', w:'联网搜索取几条', tips:[
+  '调大：覆盖面更全，但拼出来的上下文变长、token 变贵，噪声也多',
+  '调小到 2~3：更快更省，适合"只要一个权威答案"的问题'
+]}],
+'overview:nginx': [{ p:'proxy_read_timeout 300s', w:'流式连接超时', tips:[
+  '调太短（<60s）：模型稍慢一点连接就被掐断，前端只看到半截回答',
+  '调太长：连接占用更久，并发高时后端连接数容易堆住',
+  'proxy_buffering off 不能省 —— 开了缓冲，打字机会变成"憋一会儿蹦全文"'
+]}],
+'overview:langfuse': [{ p:'后台 flush + timeout=5 + retention 7 days', w:'观测上报与留存', tips:[
+  '不 flush：流结束后的 trace 可能还压在内存里，面板上看不到这一次',
+  '但 flush 不能写在响应路径上同步等：面板没起时实测卡 22.2 秒（占一次问答 77%）→ 丢后台任务 + 客户端 timeout=5',
+  '放后台也别裸 fire-and-forget：要留住 task 引用（放一个 set，done_callback 里摘掉），否则任务可能被 GC 提前回收',
+  'retention 调长：历史 trace 留得久，自托管磁盘也跟着涨',
+  'trace 记的是输入输出全文，涉及隐私时要么关掉、要么脱敏'
+]}],
+'overview:pg': [{ p:'默认连接池 pool_size=5, max_overflow=10', w:'数据库连接数', tips:[
+  '并发一上来（多人同时聊天 + 后台在切片）容易出现 pool timeout，这时才需要调大',
+  '调大不是免费的：Postgres 侧 max_connections 是硬上限，超了照样连不上'
+]}],
+
+'upload:b2': [{ p:'chunk_size=1000 / chunk_overlap=200', w:'切片粒度', tips:[
+  '切小（300~500）：定位更准、噪声少，但一段完整论述被拆散，模型要拼好几片才看得全',
+  '切大（1500+）：上下文完整，但一片里混进无关内容，向量被"平均"掉，检索反而变糊',
+  '重叠一般取 chunk_size 的 10%~20%，作用是防止句子被切断后两边都搜不到',
+  '改完切片要重建向量库 —— 库里新旧粒度混着，检索结果会很乱'
+]}],
+'upload:b3': [{ p:'MiniLM-L6-v2（Chroma 自带 ONNX）', w:'embedding 模型', tips:[
+  '换 BAAI/bge-small-zh-v1.5：中文效果更好，但走 sentence-transformers 会拉 torch（1GB+）',
+  '想装得快就用 ONNX 版：不拉 torch，代价是中文略弱',
+  '换模型只改 db/embeddings.py 一个文件 + 重建向量库，其它代码不用动'
+]}],
+'upload:c1': [{ p:'MAX_UPLOAD_BYTES = 10MB', w:'单文件大小上限', tips:[
+  '调小（1~2MB）：防止有人一次传几十个大 PDF 把磁盘写满，但正常技术手册可能超',
+  '调大（50MB+）：大文件能传了，但写盘 + 切片 + 向量化会明显变慢，后台失败率也上升',
+  '两道校验要一起改（file.size 预判 + 落盘后 stat 兜底），只改一处等于没改'
+]}]
+
+};
+
+/* ============================================================
+   模块数据：每个模块只留「它解决什么问题 + 关键节点 + 最容易踩的坑」
+   ============================================================ */
+const MODULES = [
+{
+  id:'m1', name:'配置中心 config.py', k:'frame', badge:'模块 1', jump:['overview','config'],
+  pain:'Key、模型名、目录、连接串必须有唯一来源，否则换环境要全局搜改；而且缺配置要在启动时就炸，不要拖到运行期。',
+  files:[{p:'app/config.py'},{p:'.env.example'},{p:'.env（已被忽略）'}],
+  flow:['.env / 环境变量','Settings() 构造','settings 单例','各模块 import'],
+  nodes:[
+    {n:'Settings(BaseSettings)',w:'一个字段 = 一个配置项；不写默认值就是必填，缺失时构造即报错'},
+    {n:'SecretStr',w:'密钥打印自动打码成 ******；取值用 .get_secret_value()'},
+    {n:'@property database_uri / chroma_dir',w:'派生值集中一处现算，不落库'},
+    {n:'database_host / DATA_DIR / PROJECT_ROOT',w:'路径与地址可注入 —— 容器里才不会指到 localhost'},
+    {n:'database_port',w:'端口也不写死：裸机 .env 配 5434（避开 project6 的 pgvector），容器里由 compose 注入 5432 —— 容器内互访走服务名，不经过宿主映射',tune:'5434（裸机 .env）/ 5432（容器内，compose 注入）'}
+  ],
+  pits:[
+    {lv:'🔴',title:'.env 没进 .gitignore，密钥会随 git add 上传',where:'.gitignore',
+     sym:'backend/.env 里存着 DeepSeek / BoCha 的真实 Key。',
+     cause:'项目是先长代码、后想起版本控制卫生；.gitignore 不是"以后再说"的东西。',
+     fix:'根目录建 .gitignore 忽略 .env / outputs / logs / 缓存 / *.db；如果 .env 之前已被跟踪过，光加 .gitignore 不够，要 git rm --cached 并尽快去平台轮换 Key。'},
+    {lv:'🟡',title:'容器里连不上数据库：Connection refused',where:'config.py:63 · docker-compose.yml:40',
+     sym:'docker compose up 后后端启动即崩，日志里是连接 localhost:5432 被拒。',
+     cause:'连接串写死 localhost —— 容器里的 localhost 指容器自己，不是 postgres 容器。',
+     fix:'把地址抽成 database_host 配置项，compose 里注入服务名 postgres。'},
+    {lv:'🟡',title:'数据库端口写死 → 和隔壁项目抢 5432',where:'config.py:78 · docker-compose.yml:14-17',
+     sym:'docker compose up 后后端连不上库；更坑的一种是连上了却报 InvalidPasswordError —— 其实连到的是另一个项目的 postgres。',
+     cause:'连接串里端口写死 5432，而本机 5432 已被 project6 的 pgvector 占着。只改 compose 的端口映射没用：代码里还是按 5432 去连。',
+     fix:'端口抽成 database_port 配置项；compose 把 postgres 映射成 5434:5432，同时给 backend 注入 DATABASE_PORT=5432（容器内直连服务名 postgres，不走宿主映射），裸机 .env 里配 5434。这样两个项目能同时跑。'},
+    {lv:'🟢',title:'有的配置项声明了却没人读（改了不生效）',where:'config.py:51,54 vs db/embeddings.py',
+     sym:'config.py 写着 embeddings_model_name = "BAAI/bge-small-zh-v1.5"，但实际检索用的是 Chroma 自带的 all-MiniLM-L6-v2；model_provider 也从头到尾没被引用。',
+     cause:'db/embeddings.py 直接用了 DefaultEmbeddingFunction()，没读这个配置项 —— 于是"配置中心是单一真相来源"这条规则在这里被打破了。',
+     fix:'二选一：让 embeddings.py 读 settings.embeddings_model_name（换模型时改一处就生效），或者把这个字段删掉/注明"暂未使用"。留着不用最容易误导下一个人。'}
+  ]
+},
+{
+  id:'m2', name:'应用装配（main / lifespan / middleware / 异常）', k:'frame', badge:'模块 2', jump:['overview','main'],
+  pain:'跨域、日志、统一错误格式、启动初始化都是横切关注点，不该散在每个业务函数里。',
+  files:[{p:'app/main.py'},{p:'app/lifespan.py'},{p:'app/middleware.py'},{p:'app/exceptions.py'}],
+  flow:['uvicorn 启动','lifespan 建目录 / 建表','中间件栈：CORS + 日志','路由匹配','异常统一成 JSON'],
+  nodes:[
+    {n:'FastAPI + version_prefix',w:'所有接口挂 /api/v1，以后升级 v2 只改一个变量'},
+    {n:'register_middleware',w:'CORS + 请求日志（方法 / 路径 / 状态码 / 耗时）—— 排障第一现场'},
+    {n:'lifespan',w:'yield 前建 outputs/ 和建表（幂等），yield 后做关闭动作'},
+    {n:'AppException + handler',w:'业务异常统一翻译成 JSON，service 层因此完全不依赖 FastAPI'}
+  ],
+  pits:[
+    {lv:'🟢',title:'init_db 写了却没接进 lifespan',where:'app/lifespan.py:18',
+     sym:'服务起来了，但第一个请求就报 relation "threads" does not exist。',
+     cause:'建表函数写好了，但没在启动钩子里调用。',
+     fix:'lifespan 里 await init_db()；create_all 是幂等的，重复启动无副作用。'},
+    {lv:'🟡',title:'CORS allow_origins=["*"] 没收紧',where:'app/middleware.py:17',
+     sym:'任何站点都能带着用户的浏览器发跨域请求。',
+     cause:'v1 为了本地联调省事全放行，注释里写了 TODO 一直没做。',
+     fix:'上线前改成前端真实地址（Nginx 同源反代后甚至可以完全关掉 CORS）。'}
+  ]
+},
+{
+  id:'m3', name:'数据库与 ORM', k:'data', badge:'模块 3', jump:['overview','pg'],
+  pain:'用 Python 对象操作数据库，同时把「查询语句」和「业务判断」分开，否则代码会黏成一团。',
+  files:[{p:'app/db/main.py'},{p:'app/db/models.py'},{p:'app/threads/repository.py'}],
+  flow:['database_uri','create_async_engine（懒连接）','async_sessionmaker','SessionDep 注入','repository 执行 select'],
+  nodes:[
+    {n:'create_async_engine',w:'连接数据库的总管道；懒加载 —— 构造时不真连，第一次用才建连接'},
+    {n:'async_sessionmaker(expire_on_commit=False)',w:'commit 之后对象属性还能访问，不会触发额外查询'},
+    {n:'get_session + SessionDep',w:'FastAPI 依赖：每个请求一个会话，请求结束自动关闭'},
+    {n:'repository 层',w:'只写查询、不抛异常；查不到返回 None，业务判断留给 service'},
+    {n:'Base + Mapped 模型',w:'一张表 = 一个类；外键列记得加 index=True（按会话查文档是高频操作）'}
+  ],
+  pits:[
+    {lv:'🟡',title:'expire_on_commit 默认 True，async 下直接报错',where:'app/db/main.py:17',
+     sym:'commit 之后访问对象属性抛 MissingGreenlet。',
+     cause:'默认行为是 commit 后让属性过期，再访问要重新查库，而 async 会话不允许这种隐式 IO。',
+     fix:'async_sessionmaker(engine, expire_on_commit=False)。这个报错信息完全看不出根因，是 async SQLAlchemy 的经典坑。'},
+    {lv:'🟡',title:'隔离条件漏在 WHERE 外面',where:'threads/repository.py:24',
+     sym:'换个 id 就能看到别人的数据。',
+     cause:'把权限校验写成了业务层的 if 判断，而不是查询条件。',
+     fix:'SELECT ... WHERE id=? AND user_id=? —— 隔离要发生在 SQL 里；查不到就返回 None，service 翻译成 404。'}
+  ]
+},
+{
+  id:'m4', name:'会话与鉴权（threads / users / security）', k:'gateway', badge:'模块 3 + 6', jump:['overview','u_auth'],
+  pain:'每个用户的会话和文档必须互相看不见；密码不能明文存，令牌要能验真伪、能过期。',
+  files:[{p:'app/threads/service.py'},{p:'app/users/service.py'},{p:'app/security.py'}],
+  flow:['注册：查重 → bcrypt 哈希','登录：校验 → 签 JWT','前端存 token','请求带 Bearer','get_current_user 验签 → user_id'],
+  nodes:[
+    {n:'get_thread(id, user_id)',w:'两条条件都命中才算数；查不到 → 404（不区分"不存在"和"不是你的"）'},
+    {n:'create_access_token',w:'payload={sub, exp} + HS256 签名；exp 必须用带时区的 UTC'},
+    {n:'get_current_user',w:'HTTPBearer(auto_error=False) → 缺 token 时自己抛 401'},
+    {n:'hash_password / verify_password',w:'bcrypt 每次自动加盐，同一个密码两次哈希结果不同但都能验证'},
+    {n:'delete_thread',w:'先删数据库记录，再 adelete_thread 清聊天记忆 —— 两处都要删'}
+  ],
+  pits:[
+    {lv:'🟡',title:'登录失败区分用户名错 / 密码错',where:'users/service.py:20',
+     sym:'用户名错返回 404、密码错返回 401 → 攻击者可以批量探测出哪些用户名存在。',
+     cause:'两种失败走了不同分支、不同状态码。',
+     fix:'统一成一个错误、一个状态码，返回"用户名或密码错误"。'},
+    {lv:'🟡',title:'HTTPBearer 默认 auto_error=True，会抛 403',where:'security.py:15',
+     sym:'没带 token 的请求收到 403 而不是 401，前端判断登录态的逻辑错位。',
+     cause:'默认行为是缺凭证直接抛 403，且错误信息不可控。',
+     fix:'HTTPBearer(auto_error=False)，自己判断 credentials is None 并抛 401。'},
+    {lv:'🟡',title:'JWT 的 exp 用了本地时间',where:'security.py:22',
+     sym:'刚登录就提示过期，或者换台时区不同的机器行为不一致。',
+     cause:'datetime.now() 取的是本地时间，而 JWT 规范要求 UTC。',
+     fix:'datetime.now(timezone.utc) + timedelta(hours=24)。'}
+  ]
+},
+{
+  id:'m5', name:'文档上传与索引（documents + vector_store + embeddings）', k:'service', badge:'模块 4', jump:['upload','c1'],
+  pain:'解析加向量化很慢，同步做完前端会超时；同时要挡住坏文件，还不能留下半成品数据。',
+  files:[{p:'app/documents/routes.py'},{p:'app/db/vector_store.py'},{p:'app/db/embeddings.py'}],
+  flow:['校验三关','落盘 tmp','登记 processing','返回 202 + 预约后台','解析→切片→向量化→入库','状态改 ready'],
+  nodes:[
+    {n:'upload_document 端点',w:'202 + BackgroundTasks；校验顺序 = 归属 → 类型 → 大小 → 落盘 → stat 兜底'},
+    {n:'process_document（后台）',w:'自己 async_session() 开会话；成功改 ready，失败写 failed + error_message'},
+    {n:'_split_text',w:'1000 字一段、重叠 200 字，防止一句话被拦腰截断后两边都搜不到',tune:'chunk_size / overlap —— 改完要重建向量库'},
+    {n:'index_document',w:'解析 → 切片 → 向量化 → Chroma.add 四件套（ids / metadatas / 原文 / 向量）'},
+    {n:'search_chunks',w:'查询向量化 + where 过滤 + top-k；k 先掐到 col.count()',tune:'k=3 —— 改完必须重跑 Recall@k / MRR'},
+    {n:'embeddings 单例',w:'入库和查询必须共用同一个实例 —— 换模型等于换向量空间',tune:'换模型只改这一个文件 + 重建向量库'}
+  ],
+  pits:[
+    {lv:'🔴',title:'入库和查询用了不同的 embedding 实例',where:'app/db/embeddings.py',
+     sym:'检索结果看似正常但完全不相干，而且不报任何错。',
+     cause:'各模块各建一个 embedding 对象（甚至模型不同）→ 两个向量空间对不上。',
+     fix:'全局只 new 一个实例（模块级单例），documents 与 chat 两处共用。这是最高频的隐形 bug。'},
+    {lv:'🟡',title:'上传的 400 / 413 被吞成 500',where:'documents/routes.py:108',
+     sym:'传了 .exe 或 50MB 文件，前端只收到"服务器错误"，看不到真实原因。',
+     cause:'except Exception 排在 except HTTPException 前面，把用户侧错误一起改写成 500。',
+     fix:'在 except Exception 之前加一行 `except HTTPException: raise`，让 400/413 原样透传。'},
+    {lv:'🟡',title:'后台任务复用请求的 session',where:'documents/routes.py:28',
+     sym:'后台处理报 "session is closed" 或随机失败。',
+     cause:'BackgroundTasks 在响应返回之后才跑，此时请求级 session 已经关闭。',
+     fix:'后台任务自己 async with async_session() 开一个会话。'},
+    {lv:'🟡',title:'删文档只删数据库，不清向量',where:'documents/routes.py:129',
+     sym:'文档在列表里消失了，但提问时还能搜到它的内容 —— 隐私问题 + 脏数据。',
+     cause:'两个存储（Postgres 与 Chroma）只删了一个。',
+     fix:'先 delete_document_chunks 按 document_id 清切片，再删数据库记录。'}
+  ]
+},
+{
+  id:'m6', name:'聊天 Agent（chat/* + checkpointer）', k:'agent', badge:'模块 5', jump:['agent','c2'],
+  pain:'模型不知道你的私有文档，直接问就会一本正经地编；而且整个过程要实时展示给用户。',
+  files:[{p:'app/chat/langgraph_agent.py'},{p:'app/chat/tools.py'},{p:'app/chat/prompts.py'},{p:'app/chat/service.py'},{p:'app/db/checkpointer.py'}],
+  flow:['验会话','打开记忆存档器','拼 Agent 图','两路并发：updates + token 泵','工具检索 / 逐字生成','NDJSON 推给前端'],
+  nodes:[
+    {n:'chat_stream（async 生成器）',w:'队列把两路流合并后 yield；记忆连接靠 yield 保活，生命周期覆盖整个流式过程'},
+    {n:'TokenPump（token 泵）',w:'AsyncCallbackHandler：on_llm_new_token 把非空 token 放进 asyncio.Queue，边取边 yield',tune:'空 token 必须过滤，否则往流里灌空行'},
+    {n:'build_retrieval_graph',w:'create_agent(模型 + 工具 + system_prompt + checkpointer)'},
+    {n:'SYSTEM_PROMPT',w:'写死工具优先级 + 三条硬约束：不许编、同一工具最多重试 1 次、历史里的"搜不到"不算数'},
+    {n:'两个工具',w:'retrieve_user_documents 从 config 取 thread_id；web_search 走博查',tune:'检索 k=3、联网 count=5'},
+    {n:'ChatStreamResponse',w:'updates → tool_call / tool_result，messages → llm_chunk，一行一个 JSON'},
+    {n:'get_checkpointer',w:'AsyncSqliteSaver，参数是纯路径字符串，必须 async with 使用'}
+  ],
+  pits:[
+    {lv:'🔴',title:'打字机失效：回答一次性蹦出来',where:'langgraph_agent.py:28 · chat/service.py',
+     sym:'提问后干等十几秒，整段回答"啪"地一次出现 —— 150 字的回答实测只收到 1 个 llm_chunk。',
+     cause:'两处叠加：① build_retrieval_graph 调 create_model() 漏传 streaming=True，而 langchain-core 对"显式传 False"是硬禁用，一个 token 回调都不会有；② 补上也还不够 —— langgraph 1.2.11 的 create_agent 把 model 节点标了 trace=False，token 不产出 stream_mode="messages" 事件。',
+     fix:'显式传 streaming=True；并且不依赖 messages 模式，改用 TokenPump 回调把 token 泵进队列、与 updates 流合并。实测 1 → 138 个分片、网络层 1.6 秒逐步到达，NDJSON 协议不变、前端零改动。'},
+    {lv:'🟡',title:'LangChain / LangGraph 新版 API 三连改名',where:'langgraph_agent.py:6,32 · service.py:58',
+     sym:'照旧教程写的代码直接报错或参数不认。',
+     cause:'create_react_agent 搬到 langchain 包并改名 create_agent；prompt 参数改名 system_prompt；checkpointer.aget 改名 aget_tuple，且 checkpoint_ns 新版必填。',
+     fix:'跟版本改：from langchain.agents import create_agent，参数用 system_prompt，读历史用 aget_tuple，config 里补 checkpoint_ns=""。'},
+    {lv:'🟡',title:'工具函数拿不到 thread_id',where:'chat/tools.py:9',
+     sym:'工具返回 "No relevant documents"，但文档明明传了。',
+     cause:'工具签名里没有声明 config: RunnableConfig，运行时注入不进去。',
+     fix:'def retrieve_user_documents(query: str, config: RunnableConfig)，再从 config["configurable"] 取 thread_id。'},
+    {lv:'🟡',title:'提示词没写"禁止联网兜底"，模型用科普糊过文档缺失',where:'chat/prompts.py:14',
+     sym:'问文档里的暗号，模型答了一段网上抄来的内容 —— 看起来答了，其实是幻觉。',
+     cause:'提示词只说了"不知道就查"，没说"文档问题检索不到必须认输"。',
+     fix:'SYSTEM_PROMPT 里写硬约束：文档问题检索不到就用固定话术认输，禁止用 web_search 凑答案。'}
+  ]
+},
+{
+  id:'m7', name:'前端 React（流式 + 会话管理）', k:'client', badge:'模块', jump:['overview','react'],
+  pain:'AI 回答是一段段吐出来的，要边收边显示；同时多会话切换、登录态、文件上传都要管，状态一多就容易串台。',
+  files:[{p:'src/App.jsx'},{p:'src/components/*.jsx'},{p:'nginx.conf'}],
+  flow:['注册 / 登录拿 token','拉会话列表','发消息 → 建会话','getReader 读流','按行解析','打字机渲染','退出登录：掐流 + 清 token'],
+  nodes:[
+    {n:'handleSend',w:'一个函数管完整流程：补建会话 → 发消息 → 读流 → 收尾，异常全在 try/catch 里兜住'},
+    {n:'buffer + split + pop',w:'三行解决"半行 JSON"：攒着 → 按 \\n 切 → 最后一段留到下次拼'},
+    {n:'AbortController + 点击序号 ref',w:'切会话掐断旧流；快速连点时只让最后一次点击的结果上屏'},
+    {n:'handleUpload(FormData)',w:'只手动加 Authorization，Content-Type 交给浏览器自动补 boundary'},
+    {n:'role 映射',w:'后端存 human / ai，前端气泡要 user / assistant'},
+    {n:'登录 / 注册双形态卡片',w:'authMode 一个状态切换两种表单；注册成功后直接复用 doLogin 自动登录（不用再手输一遍）；错误分派：后端给了文案就用它，422（pydantic 是数组）换成表单规则提示'},
+    {n:'handleLogout',w:'退出登录 = 掐断在跑的流（abort）+ 清 state 与 localStorage 的 token → 回到登录形态的卡片'}
+  ],
+  pits:[
+    {lv:'🟡',title:'写了 CSS，页面却只有居中裸文本',where:'src/App.jsx 顶部 · src/index.css',
+     sym:'气泡、左右分布、配色全没生效，页面中间堆着一堆字。',
+     cause:'两个坑叠加：① App.jsx 没有 import "./App.css"（Vite 不会自动扫描 CSS，不 import 等于白写）；② index.css 里 #root 还是默认模板的落地页样式（限宽 1126px + margin auto + 文字居中）。',
+     fix:'App.jsx 顶部补 import "./App.css"；index.css 把 #root 改成 width:100%; min-height:100vh。'},
+    {lv:'🟡',title:'发 FormData 时手写 Content-Type',where:'src/App.jsx（handleUpload）',
+     sym:'上传直接 400 / 422，后端说没收到 file 字段。',
+     cause:'浏览器本来会自动加 multipart/form-data; boundary=xxx，手写 Content-Type 把 boundary 弄丢了。',
+     fix:'发 FormData 只手动加 Authorization，别碰 Content-Type。'},
+    {lv:'🟡',title:'流式偶发 JSON 解析错误 / 切会话内容串台',where:'src/App.jsx（读流与解析处）',
+     sym:'打字打到一半突然报 Unexpected end of JSON input；或者旧会话的回答出现在新会话里。',
+     cause:'网络分包会把一行 JSON 切成两半；正在跑的流没有取消，它的 chunk 继续 setState。',
+     fix:'buffer 攒到换行符再解析；AbortController 挂在 ref 上，切会话时 abort。'}
+  ]
+},
+{
+  id:'m8', name:'部署 Docker Compose', k:'external', badge:'模块 7', jump:['overview','nginx'],
+  pain:'"在我机器上能跑"不算交付；要把后端、前端、数据库打成一个可复现的整体，而且数据不能丢。',
+  files:[{p:'docker-compose.yml'},{p:'docker-compose.langfuse.yml'},{p:'backend/Dockerfile'},{p:'frontend/react-app/nginx.conf'}],
+  flow:['compose up --build','postgres 健康','backend 起（注入 .env）','/health 通过','frontend 起','浏览器访问'],
+  nodes:[
+    {n:'Dockerfile 分层顺序',w:'先 COPY requirements 装依赖，最后 COPY 代码 —— 改代码时不重装依赖'},
+    {n:'ENTRYPOINT uvicorn --host 0.0.0.0',w:'绑 localhost 只认容器自己，外面永远访问不到'},
+    {n:'healthcheck 用 python urllib',w:'slim 镜像没有 curl；配 depends_on: service_healthy 保证启动顺序'},
+    {n:'volumes ./outputs:/app/outputs + DATA_DIR',w:'数据落在宿主机，容器删了也不丢'},
+    {n:'Nginx: proxy_buffering off',w:'不关缓冲，流式响应会被攒成一坨再发'},
+    {n:'Nginx 静态缓存策略',w:'index.html 不缓存（部署新版本后必须拿到新入口）+ /assets/ 带 hash 长缓存 immutable —— 文件名变了才重拉',tune:'index.html: no-cache · /assets/: max-age=31536000, immutable'},
+    {n:'postgres 端口映射 5434:5432',w:'宿主 5434 → 容器 5432，避开 project6 占用的 5432；容器内互访走服务名 + 5432，不受宿主映射影响'},
+    {n:'本机端口分配：三套并存',w:'同一台机器上其实跑着三个 postgres：project5 走 5434、Langfuse 自己的库走 5433（面板仍是 8080）、5432 留给 project6 的 pgvector —— 谁的端口都不写死在代码里，换台机器只改 .env',tune:'宿主端口：postgres 5434 · langfuse-db 5433 · project6 5432 · 面板 8080'}
+  ],
+  pits:[
+    {lv:'🔴',title:'不挂 outputs 卷 = 容器删了数据全丢',where:'docker-compose.yml:42',
+     sym:'重启容器后上传的文档、会话记忆、聊天历史全没了。',
+     cause:'数据写在容器可写层里，随容器生命周期一起消失。',
+     fix:'volumes 挂 ./outputs:/app/outputs，并用 DATA_DIR 环境变量把落盘位置指到挂载点。'},
+    {lv:'🟡',title:'Dockerfile 指令行尾带中文注释，构建直接失败',where:'backend/Dockerfile',
+     sym:'buildkit 报解析异常，提示指向 COPY 行但看不出是注释的问题。',
+     cause:'指令行尾的 # 注释在某些 buildkit 版本下解析异常。',
+     fix:'注释移到文件头部或独立成行，指令行保持纯 ASCII。'},
+    {lv:'🟡',title:'Nginx 不开 proxy_buffering off，打字机效果消失',where:'nginx.conf:20',
+     sym:'本地开发是逐字蹦，Docker 里变成一次性蹦出全文。',
+     cause:'Nginx 默认把响应攒够一批再发。',
+     fix:'location /api/ 里加 proxy_buffering off; 并把 proxy_read_timeout 放宽到 300s。'},
+    {lv:'🟡',title:'index.html 被浏览器缓存 → 部署新版本后还在跑旧页面',where:'nginx.conf:13-22',
+     sym:'新版本上线了，自己机器上还是旧的；更糟的情况是报 chunk 加载失败（旧 bundle 已经被清掉）。',
+     cause:'index.html 里引用的是带 hash 的 bundle 文件名。它一旦被缓存住，浏览器就永远去拿旧的文件名。',
+     fix:'两条一起上：location = /index.html 加 Cache-Control: no-cache（入口每次都问服务器）；location /assets/ 加 public, max-age=31536000, immutable（带 hash 的资源可以放心长缓存）。'},
+    {lv:'🟢',title:'本机多项目抢端口：默认 5432 谁都想要',where:'docker-compose.yml:14-17 · docker-compose.langfuse.yml',
+     sym:'起第二个项目时 postgres 起不来；更隐蔽的是"起来了但连到了别人家的库"，报的却是密码错。',
+     cause:'compose 的默认端口是"单项目思维"：project5 / project6 / Langfuse 三套服务在同一台机器上必然撞。',
+     fix:'一开始就把端口参数化并记账：project5 的 postgres 5434、Langfuse 的库 5433、5432 留给 project6。宿主端口只影响裸机调试，容器内互访一律走服务名 + 容器端口（5432）。这条纪律比任何单个修复都值钱 —— 它决定了三个项目能不能同时跑。'}
+  ]
+},
+{
+  id:'m9', name:'可观测与评估（Langfuse + eval）', k:'ok', badge:'技术雷达', jump:['agent','d5'],
+  pain:'Agent 是多步循环，答错了不知道是检索没找到、还是模型没按提示词走；"感觉还行"也不是结论。',
+  files:[{p:'app/chat/langfuse_handler.py'},{p:'backend/eval/retrieval_eval.py'},{p:'backend/eval/generation_eval.py'}],
+  flow:['LangGraph 执行','标准回调钩子','翻译成 trace / span / generation','后台 flush 上报面板（不等它）','评估：Recall@k / MRR / Judge'],
+  nodes:[
+    {n:'LangfuseCallbackHandler',w:'根 chain→trace，子 chain→span，LLM→generation，工具→span'},
+    {n:'run_id 映射表',w:'开始事件建对象、结束事件取出来补 output；全程 try/except 静默'},
+    {n:'retrieval_eval',w:'Recall@k / MRR；索引与查询必须用同一个固定 thread_id'},
+    {n:'generation_eval',w:'LLM-as-Judge 打正确性和忠实度，temperature 调低保稳定'},
+    {n:'_flush_langfuse_in_background',w:'flush 丢成 fire-and-forget 后台任务，并用一个集合留住引用（不留任务可能被 GC 提前回收）；观测失败只记 warning，绝不影响主流程',tune:'timeout=5s —— SDK 单请求超时，面板没起时失败得快一点'}
+  ],
+  pits:[
+    {lv:'🟡',title:'观测拖慢主流程：面板没起时 flush() 卡 22 秒（已修）',where:'chat/service.py:36-49',
+     sym:'回答早就显示完了，输入框还锁着十几秒 —— 一次问答实测 28.8 秒，其中 22.2 秒耗在 flush()。',
+     cause:'Langfuse 面板（8080）没启动时 SDK 上报会带重试/退避；而 flush() 是同步阻塞调用，写在 chat_stream 的 finally 里，把响应尾巴拖住了。',
+     fix:'已修（2026-10-03）：flush 改成 fire-and-forget 后台任务（asyncio.create_task + 一个 _background_tasks 集合留引用），并给 Langfuse 客户端设 timeout=5。注意 await asyncio.to_thread 不够 —— 那只是换到别的线程等，只有"发起后不等待"才真正和响应解耦。'},
+    {lv:'🟡',title:'Langfuse SDK 4.x 上报 404',where:'requirements.txt:34',
+     sym:'面板上一条 trace 都没有，SDK 侧报 404。',
+     cause:'新版 SDK 走 OTLP 协议，而自托管面板是 langfuse/langfuse:2（只认经典 JSON 协议）；且 4.x 没有 trace() 方法，自写回调也不兼容。',
+     fix:'requirements 锁 langfuse==2.55.0，并基于 BaseCallbackHandler 自写轻量回调做协议翻译。'},
+    {lv:'🟡',title:'评估脚本的 thread_id 与索引时不一致',where:'eval/retrieval_eval.py:37',
+     sym:'Recall@k 直接 0.00，看起来像检索完全失效。',
+     cause:'search_chunks 自带 where={"thread_id":...} 过滤；索引和查询用了两个随机 uuid，永远匹配不上。',
+     fix:'评估用固定的 EVAL_THREAD_ID，索引与查询传同一个。'},
+    {lv:'🟡',title:'LLM-as-Judge 会误判',where:'README.md:123',
+     sym:'#3 的忠实度只给了 2 分，人工抽查发现答案其实是对的。',
+     cause:'裁判也是模型，会受排版和措辞影响。',
+     fix:'打分后必须人工抽查校准；把 Judge 当相对信号，不要当绝对真理去优化。'}
+  ]
+}
+];
+
+/* ============================================================
+   必背与路线
+   ============================================================ */
+const MUST = {
+  mainline:'上传文档 → 解析切片 → 向量化进 Chroma → 提问时 Agent 先检索本会话 → 片段喂给模型 → NDJSON 逐字流回前端',
+  qa:[
+    {q:'为什么上传要返回 202 + 后台任务？',a:'解析和向量化可能很慢，同步做完前端会一直转圈甚至超时。202 的语义就是"收到了但还没处理完"，处理结果靠 status 字段暴露（processing → ready / failed）。'},
+    {q:'为什么越权要返回 404 而不是 403？',a:'403 等于告诉对方"这条记录存在，只是你没权限"，白白泄露数据规模。404 把"不存在"和"不是你的"合并成同一个结果。'},
+    {q:'为什么 embedding 必须是全局单例？',a:'入库和查询用不同实例（甚至不同模型）= 两个向量空间，检索会返回看似正常的垃圾，而且不报任何错。这是最高频的隐形 bug。'},
+    {q:'为什么删文档要动两个库？',a:'Chroma 里是切片、Postgres 里是记录。只删一个就会出现"删了还能搜到内容"（隐私问题）或"列表里有但搜不到"。'},
+    {q:'为什么要自己泵 token，而不是用 stream_mode="messages"？',a:'langgraph 1.2.11 的 create_agent 把 model 节点标了 trace=False，token 不产出 messages 事件（150 字的回答只给 1 个 chunk）；再加上漏传 streaming=True 时 langchain-core 对"显式 False"是硬禁用，连回调都没有。所以改成：图跑 updates 拿工具调用，模型 token 由 TokenPump 回调泵进同一个队列。'},
+    {q:'为什么后台异常不能往外抛？',a:'请求早就返回了，异常没有接收方，只能烂在日志里。必须落到 status=failed + error_message，让用户在界面上看得见。'},
+    {q:'为什么前端要 buffer + split + pop？',a:'网络分包会把一行 JSON 切成两半，拿到半行就 JSON.parse 必崩。要攒到换行符再解析，最后一段留到下次拼。'},
+    {q:'为什么容器里连不上数据库？',a:'容器里的 localhost 指容器自己，不是 postgres 容器。要注入 compose 服务名，并用 depends_on + healthcheck 保证启动顺序。'}
+  ],
+  steps:[
+    {n:'1',t:'配置 config.py',d:'单一配置源 · 早失败 · 路径可注入',gate:'讲清"为什么缺 key 要启动就报错"'},
+    {n:'2',t:'入口与装配（main / lifespan / middleware / 异常）',d:'FastAPI 骨架 · 中间件 · 统一异常',gate:'说清中间件和依赖注入在请求生命周期的哪一步'},
+    {n:'3',t:'数据库与 ORM',d:'engine / 异步会话 / repository 分层',gate:'画出 routes→service→repository，并说明每层不做什么'},
+    {n:'4',t:'会话与鉴权',d:'JWT · bcrypt · 越权一律 404',gate:'说清"为什么越权返回 404 而不是 403"'},
+    {n:'5',t:'文档上传与索引',d:'202 + 后台任务 · 切片 · 向量化入库',gate:'解释状态机三个状态各自的含义'},
+    {n:'6',t:'聊天 Agent + 记忆',d:'ReAct 循环 · 两个工具 · NDJSON 流式',gate:'不看代码画出 Agent 循环，并说清两路流（updates + token 泵）为什么要合并'},
+    {n:'7',t:'前端 React',d:'流式解析 · 防串台 · 上传',gate:'解释 buffer + split + pop 三行各自解决什么'},
+    {n:'8',t:'部署 Docker Compose',d:'分层构建 · 卷挂载 · 健康检查',gate:'说清"不挂卷会怎样"和"healthcheck 为什么不用 curl"'},
+    {n:'★',t:'工程化加分项（技术雷达）',d:'RAG 评估体系 + Langfuse 可观测',gate:'能拿基线数字说明为什么下一步要上 Rerank'}
+  ],
+  baseline:[
+    {k:'Recall@3',v:'0.90',d:'该找到的基本都找到了（无答案题正确不命中，其余 9/9 命中）'},
+    {k:'MRR',v:'0.70',d:'4 题正确答案排在第 2 位 —— 找得到，但排得不够前'},
+    {k:'正确性',v:'5.0/5',d:'LLM-as-Judge 打分，回答与期望答案一致'},
+    {k:'忠实度',v:'4.7/5',d:'无幻觉；#3 的低分经人工抽查确认为 Judge 误判'},
+    {k:'pytest',v:'12',d:'12 passed（新增"无 token 查历史 → 401"）；红线：不碰网络、不依赖真实 key'}
+  ],
+  todo:[
+    {done:1,t:'RAG 评估体系（测试集 / Recall@k / MRR / LLM-as-Judge）'},
+    {done:0,t:'检索优化：Hybrid Search（向量+关键词）+ Rerank 精排 → 冲 MRR'},
+    {done:0,t:'切片换成 RecursiveCharacterTextSplitter（按标点/语义边界）'},
+    {done:0,t:'扩大测试集：多主题文档 + 每文档 20+ 问'},
+    {done:0,t:'jwt_secret 挪到环境变量 + CORS 收紧（上线前必做）'},
+    {done:0,t:'用户反馈闭环：轻量 👍/👎 标注（复用进 project6）'}
+  ]
+};
+/* ============================================================
+   引擎：渲染 / 连线路由 / 演示播放器
+   ============================================================ */
+const $  = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>Array.prototype.slice.call(r.querySelectorAll(s));
+const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+const S = { view:'map', sceneId:SCENES[0].id, zoom:1, fit:true, sel:null, step:-1,
+            playing:false, timer:null, speedIdx:0, moduleId:MODULES[0].id };
+const curScene = ()=>SCENES.filter(s=>s.id===S.sceneId)[0];
+
+/* ---------- 主题 ---------- */
+function applyTheme(t){
+  document.documentElement.dataset.theme = t;
+  $('#themeBtn').textContent = (t==='dark')?'☀️':'🌙';
+  try{ localStorage.setItem('p5-theme',t); }catch(e){}
+  if(S.view==='map') renderCanvas();
+}
+$('#themeBtn').onclick = ()=>applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+
+/* ---------- 视图切换 ---------- */
+function setView(v){
+  S.view = v;
+  $$('#tabs button').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
+  $$('.view').forEach(s=>s.classList.toggle('active', s.id==='view-'+v));
+  if(v==='map') renderScene();
+  else if(v==='modules') renderModules();
+  else renderMust();
+}
+$$('#tabs button').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+
+/* ---------- 左侧列表折叠（两个视图共用） ---------- */
+function setSideCollapsed(on){
+  $$('.side').forEach(s=>s.classList.toggle('collapsed', on));
+  $('#sideBtn').classList.toggle('on', on);
+  try{ localStorage.setItem('p5-side', on?'1':'0'); }catch(e){}
+  if(S.view==='map' && S.fit) fitZoom();
+}
+$('#sideBtn').onclick = ()=>setSideCollapsed(!$('.side').classList.contains('collapsed'));
+
+/* ============================================================
+   核心链路地图
+   ============================================================ */
+function renderScene(){
+  const sc = curScene();
+  $('#sceneList').innerHTML = SCENES.map(s=>
+    '<li data-sid="'+s.id+'" class="'+(s.id===sc.id?'active':'')+'"><span class="dot"></span><span>'+esc(s.title)+
+    '<small>'+s.nodes.length+' 个节点 · '+s.flow.length+' 步演示</small></span></li>').join('');
+  $$('#sceneList li').forEach(li=>li.onclick=()=>{
+    stopPlay(); S.sceneId=li.dataset.sid; S.sel=null; S.step=-1; S.fit=true; renderScene();
+  });
+  $('#sceneTitle').textContent = sc.title;
+  $('#sceneDesc').textContent  = sc.desc;
+  $('#legend').innerHTML = sc.legend.map(k=>'<span class="chip c-'+k+'">'+esc(KIND_LABEL[k]||k)+'</span>').join('');
+  renderNodeList();
+  renderCanvas();
+  setStep(-1);
+  closeInspector();
+}
+function renderNodeList(){
+  const sc = curScene();
+  const q = ($('#nodeSearch').value||'').trim().toLowerCase();
+  const list = sc.nodes.filter(n=>!q || (n.t+' '+(n.s||'')+' '+(n.f||'')+' '+(n.d||'')).toLowerCase().indexOf(q)>=0);
+  $('#nodeList').innerHTML = list.length ? list.map(n=>
+    '<li data-nid="'+n.id+'" class="c-'+n.k+'"><span class="dot" style="background:var(--nc)"></span><span>'+esc(n.t)+
+    '<small>'+esc(n.s||'')+'</small></span></li>').join('') : '<li><small>没有匹配的节点</small></li>';
+  $$('#nodeList li[data-nid]').forEach(li=>li.onclick=()=>selectNode(li.dataset.nid,true));
+}
+$('#nodeSearch').oninput = renderNodeList;
+
+function renderCanvas(){
+  const sc = curScene(), canvas = $('#canvas');
+  canvas.style.width  = (sc.w*S.zoom)+'px';
+  canvas.style.height = (sc.h*S.zoom)+'px';
+  canvas.style.transform = 'scale('+S.zoom+')';
+  canvas.style.marginTop = Math.max(0, Math.round(($('#viewport').clientHeight - sc.h*S.zoom)/2)) + 'px';
+  $('#zoomVal').textContent = Math.round(S.zoom*100)+'%';
+
+  $('#groups').innerHTML = sc.groups.map(g=>
+    '<div class="grp c-'+g.k+'" style="left:'+g.x+'px;top:'+g.y+'px;width:'+g.w+'px;height:'+g.h+'px">'+
+    '<span class="gt">'+esc(g.t)+'</span></div>').join('');
+
+  $('#nodes').innerHTML = sc.nodes.map(n=>
+    '<div class="node c-'+n.k+(n.k==='problem'?' dash':'')+'" data-id="'+n.id+'" '+
+    'style="left:'+n.x+'px;top:'+n.y+'px;width:'+n.w+'px;height:'+n.h+'px">'+
+      '<div class="t">'+esc(n.t)+'</div>'+
+      (n.s?'<div class="s">'+esc(n.s)+'</div>':'')+
+      (n.f?'<div class="f">'+esc(n.f)+'</div>':'')+
+    '</div>').join('');
+  $$('#nodes .node').forEach(d=>d.onclick=()=>selectNode(d.dataset.id,false));
+
+  renderEdges();
+  if(S.sel) selectNode(S.sel,false);
+  applyStepClasses();   /* 重建画布后要把当前步骤的高亮重新贴上 */
+}
+
+/* ---------- 正交折线路由 ---------- */
+function anchorOf(n, side, off){
+  off = off||0;
+  if(side==='l') return {x:n.x, y:n.y+n.h/2+off};
+  if(side==='r') return {x:n.x+n.w, y:n.y+n.h/2+off};
+  if(side==='t') return {x:n.x+n.w/2+off, y:n.y};
+  return {x:n.x+n.w/2+off, y:n.y+n.h};
+}
+function pathPts(a,b,e){
+  const GAP = 18, D = {l:[-1,0], r:[1,0], t:[0,-1], b:[0,1]};
+  const s1 = e.sa||'r', s2 = e.sb||'l';
+  const p1 = anchorOf(a,s1,e.o1), p2 = anchorOf(b,s2,e.o2);
+  const d1 = D[s1], d2 = D[s2];
+  const A = {x:p1.x+d1[0]*GAP, y:p1.y+d1[1]*GAP};
+  const B = {x:p2.x+d2[0]*GAP, y:p2.y+d2[1]*GAP};
+  const h1 = (s1==='l'||s1==='r'), h2 = (s2==='l'||s2==='r');
+  const pts = [p1,A];
+  if(e.my!=null && !h1){                       /* 从竖边出来，先走到指定横向通道 */
+    pts.push({x:A.x, y:e.my});
+    pts.push({x: h2 ? B.x : A.x, y:e.my});
+  } else if(h1&&h2){
+    const mx = (e.mx!=null)? e.mx : (A.x+B.x)/2;
+    pts.push({x:mx,y:A.y},{x:mx,y:B.y});
+  } else if(!h1&&!h2){
+    const my = (e.my!=null)? e.my : (A.y+B.y)/2;
+    pts.push({x:A.x,y:my},{x:B.x,y:my});
+  } else if(h1&&!h2){
+    pts.push({x:B.x,y:A.y});
+  } else {
+    pts.push({x:A.x,y:B.y});
+  }
+  pts.push(B,p2);
+  const out = [pts[0]];
+  for(let i=1;i<pts.length;i++){
+    const l = out[out.length-1], p = pts[i];
+    if(Math.abs(l.x-p.x)>0.6 || Math.abs(l.y-p.y)>0.6) out.push(p);
+  }
+  return out;
+}
+function pointAt(pts, frac){
+  let total = 0;
+  for(let i=1;i<pts.length;i++) total += Math.hypot(pts[i].x-pts[i-1].x, pts[i].y-pts[i-1].y);
+  if(total<=0) return pts[0];
+  let want = total*frac;
+  for(let i=1;i<pts.length;i++){
+    const seg = Math.hypot(pts[i].x-pts[i-1].x, pts[i].y-pts[i-1].y);
+    if(want<=seg || i===pts.length-1){
+      const r = seg? want/seg : 0;
+      return {x:pts[i-1].x+(pts[i].x-pts[i-1].x)*r, y:pts[i-1].y+(pts[i].y-pts[i-1].y)*r};
+    }
+    want -= seg;
+  }
+  return pts[pts.length-1];
+}
+function renderEdges(){
+  const sc = curScene(), svg = $('#edges');
+  const nById = {}; sc.nodes.forEach(n=>nById[n.id]=n);
+  const lineC = cssVar('--line')||'#cbd5e1', hotC = cssVar('--hot')||'#ea580c';
+  const muted = cssVar('--muted')||'#64748b', bg = cssVar('--bg')||'#fff';
+  svg.setAttribute('width', sc.w); svg.setAttribute('height', sc.h);
+  svg.setAttribute('viewBox','0 0 '+sc.w+' '+sc.h);
+
+  const defs = '<defs>'+
+    '<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">'+
+      '<path d="M0,1 L9,5 L0,9 z" fill="'+lineC+'"/></marker>'+
+    '<marker id="arh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">'+
+      '<path d="M0,1 L9,5 L0,9 z" fill="'+hotC+'"/></marker></defs>';
+
+  let paths = '', labels = '';
+  sc.edges.forEach((e,idx)=>{
+    const a = nById[e.a], b = nById[e.b];
+    if(!a||!b) return;
+    const pts = pathPts(a,b,e);
+    const d = pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' ');
+    paths += '<path class="edge" data-a="'+e.a+'" data-b="'+e.b+'" data-i="'+idx+'" d="'+d+'" fill="none" '+
+      'stroke="'+lineC+'" stroke-width="'+(e.dash?1.4:1.8)+'" stroke-linejoin="round" stroke-linecap="round" '+
+      (e.dash?'stroke-dasharray="6 5" ':'')+'marker-end="url(#ar)"></path>';
+    if(e.label){
+      const m = pointAt(pts,0.5), w = e.label.length*10.2+12;
+      labels += '<g><rect x="'+(m.x-w/2)+'" y="'+(m.y-9)+'" width="'+w+'" height="18" rx="9" fill="'+bg+'" stroke="'+lineC+'" stroke-width="1"/>'+
+        '<text x="'+m.x+'" y="'+(m.y+3)+'" text-anchor="middle" font-size="10.5" fill="'+muted+'">'+esc(e.label)+'</text></g>';
+    }
+  });
+  svg.innerHTML = defs + paths;
+  const lsvg = $('#edgeLabels');
+  lsvg.setAttribute('width', sc.w); lsvg.setAttribute('height', sc.h);
+  lsvg.setAttribute('viewBox','0 0 '+sc.w+' '+sc.h);
+  lsvg.innerHTML = labels;
+}
+function selectNode(id, scroll){
+  const sc = curScene(), n = sc.nodes.filter(x=>x.id===id)[0];
+  if(!n) return;
+  S.sel = id;
+  $$('#nodes .node').forEach(d=>d.classList.toggle('sel', d.dataset.id===id));
+  const changed = openInspector();
+  renderInspector(n);
+  if(changed && S.fit) fitZoom();
+  if(scroll){
+    const vp = $('#viewport');
+    vp.scrollTo({ left:Math.max(0,(n.x+n.w/2)*S.zoom - vp.clientWidth/2),
+                  top: Math.max(0,(n.y+n.h/2)*S.zoom - vp.clientHeight/2), behavior:'smooth' });
+  }
+}
+function openInspector(){
+  const ins = $('#inspector');
+  if(ins.classList.contains('open')) return false;
+  ins.classList.add('open'); return true;
+}
+function closeInspector(){
+  const ins = $('#inspector');
+  if(!ins.classList.contains('open')) return;
+  ins.classList.remove('open'); S.sel = null;
+  $$('#nodes .node').forEach(d=>d.classList.remove('sel'));
+  if(S.view==='map' && S.fit) fitZoom();
+}
+function codeHtml(code){
+  return code.split('\n').map(l=>{
+    const t = l.trim();
+    const cm = t.indexOf('#') === 0 || t.indexOf('//') === 0 || t.indexOf('*') === 0;
+    return cm ? '<span class="cm">'+esc(l)+'</span>' : esc(l);
+  }).join('\n');
+}
+function nbItem(x, node){
+  return '<div class="nb-item c-'+node.k+'" data-nid="'+x.id+'" title="点击跳到这个节点">'+
+    '<span class="nd" style="background:var(--nc)"></span>'+
+    '<span class="nm2">'+esc(node.t)+'</span>'+
+    '<span class="rel">'+esc(KIND_LABEL[node.k]||'')+'</span>'+
+    (x.label? '<span class="rel on">'+esc(x.label)+'</span>' : '')+
+    '<span class="go">→</span></div>';
+}
+function renderInspector(n){
+  const sc = curScene(), nById = {};
+  sc.nodes.forEach(x=>nById[x.id]=x);
+  const up = [], down = [];
+  sc.edges.forEach(e=>{
+    if(e.a===n.id && nById[e.b]) down.push({id:e.b, label:e.label||''});
+    if(e.b===n.id && nById[e.a]) up.push({id:e.a, label:e.label||''});
+  });
+  const code = NODE_CODE[sc.id+':'+n.id];
+
+  let h = '<div class="insp-head"><h3>节点详情</h3><button id="inspClose">✕</button></div>';
+  h += '<div class="insp-title c-'+n.k+'" style="color:var(--nc)">'+esc(n.t)+'</div>';
+  h += '<div class="insp-badges"><span class="badge c-'+n.k+'">'+esc(KIND_LABEL[n.k]||n.k)+'</span>'+
+       (n.f?'<span class="badge">'+esc(n.f)+'</span>':'')+'</div>';
+
+  /* ① 它是什么 · 为什么（原来「一句话」「它在这干嘛」两项合并） */
+  if(n.s || n.d){
+    h += '<div class="insp-sec"><h4>它是什么 · 为什么这么设计</h4>';
+    if(n.s) h += '<p class="lead2">'+esc(n.s)+'</p>';
+    if(n.d) h += '<p>'+esc(n.d)+'</p>';
+    h += '</div>';
+  }
+
+  /* ② 关键代码：只贴说明问题的那几行 */
+  if(code){
+    h += '<div class="insp-sec"><h4>关键代码</h4><pre class="code">'+codeHtml(code)+'</pre></div>';
+  }
+
+  /* ③ 可调参数：只有真正有旋钮的节点才有这一段 */
+  const tune = NODE_TUNE[sc.id+':'+n.id];
+  if(tune){
+    h += '<div class="insp-sec"><h4>可调参数 · 往哪调 / 代价是什么</h4><div class="tune">'+
+         tune.map(t=>'<div class="tune-p"><b>'+esc(t.p)+'</b><span>'+esc(t.w)+'</span></div>'+
+                     (t.tips&&t.tips.length? '<ul>'+t.tips.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>' : '')
+                    ).join('')+
+         '</div></div>';
+  }
+
+  /* ④ 易错点 */
+  if(n.pit) h += '<div class="insp-sec"><h4>易错点</h4><div class="pit"><b>⚠ 坑：</b>'+esc(n.pit)+'</div></div>';
+
+  /* ⑤ 链路位置：上游 / 下游 分开，点条目跳转 */
+  h += '<div class="insp-sec"><h4>链路位置</h4>';
+  if(!up.length && !down.length){
+    h += '<p class="nb-hint">这是链路的一个端点，没有上下游。</p>';
+  }else{
+    h += '<p class="nb-hint">上游＝它的输入从哪来，下游＝它的结果给谁。<b>点条目直接跳过去。</b></p>';
+    if(up.length)   h += '<div class="nb-grp"><div class="gt2">↑ 上游 · '+up.length+'</div>'+up.map(x=>nbItem(x,nById[x.id])).join('')+'</div>';
+    if(down.length) h += '<div class="nb-grp"><div class="gt2">↓ 下游 · '+down.length+'</div>'+down.map(x=>nbItem(x,nById[x.id])).join('')+'</div>';
+  }
+  h += '</div>';
+
+  $('#inspector').innerHTML = h;
+  $$('#inspector .nb-item').forEach(el=>el.onclick=()=>selectNode(el.dataset.nid,true));
+  $('#inspClose').onclick = closeInspector;
+}
+
+/* ---------- 播放器 ---------- */
+/* ---------- 步骤高亮（抽出来，画布重建后要能重贴） ---------- */
+function applyStepClasses(){
+  const sc = curScene(), flow = sc.flow, i = S.step;
+  const curId = (i>=0 && i<flow.length)? flow[i].n : null;
+  const prevId = i>0? flow[i-1].n : null;
+  $$('#nodes .node').forEach(d=>{
+    d.classList.remove('hot','dim','done');
+    if(!curId) return;
+    if(d.dataset.id===curId) d.classList.add('hot');
+    else if(d.dataset.id===prevId) d.classList.add('done');
+    else d.classList.add('dim');
+  });
+  /* 相邻两步之间本来就没连线时（叙事性跳转），退化成"点亮当前节点的所有连线" */
+  const direct = !!(curId && prevId && sc.edges.some(e =>
+    (e.a===prevId && e.b===curId) || (e.b===prevId && e.a===curId)));
+  $$('#edges path.edge').forEach(p=>{
+    const a = p.dataset.a, b = p.dataset.b;
+    const walk  = (a===prevId && b===curId) || (b===prevId && a===curId);
+    const touch = (a===curId || b===curId);
+    const hot = curId && (walk || (!direct && touch));
+    p.classList.toggle('hot', !!hot);
+    p.setAttribute('stroke-width', hot? 3 : (p.getAttribute('stroke-dasharray')? 1.4 : 1.8));
+    p.setAttribute('marker-end', 'url(#'+(hot?'arh':'ar')+')');
+    p.setAttribute('stroke', hot? cssVar('--hot') : cssVar('--line'));
+  });
+}
+function setStep(i){
+  const sc = curScene(), flow = sc.flow, total = flow.length;
+  if(i<-1) i=-1; if(i>total-1) i=total-1;
+  S.step = i;
+  $('#barFill').style.width = (i<0? 0 : ((i+1)/total*100))+'%';
+  $('#stepInfo').innerHTML = (i<0)? '未开始' : '第 <b>'+(i+1)+'</b> / '+total+' 步';
+  $('#btnPrev').disabled = (i<=0);
+  $('#btnNext').disabled = (i>=total-1);
+
+  const con = $('#console');
+  if(i<0){
+    con.innerHTML = '<div class="empty">// 点「播放全过程」走一遍链路，或直接点方块看它的职责 / 为什么这么设计 / 会踩什么坑。</div>';
+  }else{
+    con.innerHTML = flow.slice(0,i+1).map((s,k)=>{
+      const err = s.msg.indexOf('✗')>=0 || s.msg.indexOf('[异常')>=0;
+      return '<div class="ln '+(err?'err':'info')+'"><span class="n">'+(k+1)+'</span>'+
+        '<span class="tag">'+(err?'异常':'步骤')+'</span><span class="m">'+esc(s.msg)+'</span></div>';
+    }).join('');
+    con.scrollTop = con.scrollHeight;
+  }
+  const curId = i>=0? flow[i].n : null, prevId = i>0? flow[i-1].n : null;
+  applyStepClasses();
+  if(i>=0){ const n = sc.nodes.filter(x=>x.id===flow[i].n)[0]; if(n) selectNode(n.id, true); }
+}
+function stopPlay(){ S.playing=false; if(S.timer) clearInterval(S.timer); S.timer=null; $('#btnPlay').textContent='▶ 播放全过程'; }
+const SPEEDS = [1,2,3];
+function startTimer(){
+  if(S.timer) clearInterval(S.timer);
+  S.timer = setInterval(()=>{
+    if(S.step>=curScene().flow.length-1){ stopPlay(); return; }
+    setStep(S.step+1);
+  }, 900 / SPEEDS[S.speedIdx]);
+}
+$('#btnSpeed').onclick = ()=>{
+  S.speedIdx = (S.speedIdx+1) % SPEEDS.length;
+  $('#btnSpeed').textContent = SPEEDS[S.speedIdx]+'×';
+  if(S.playing) startTimer();     /* 播放中改速度：重建定时器，不打断进度 */
+};
+function togglePlay(){
+  if(S.playing){ stopPlay(); return; }
+  if(S.step>=curScene().flow.length-1) setStep(-1);
+  S.playing = true; $('#btnPlay').textContent='⏸ 暂停';
+  startTimer();
+  setStep(S.step+1);
+}
+$('#btnPlay').onclick  = togglePlay;
+$('#btnNext').onclick  = ()=>{ stopPlay(); setStep(S.step+1); };
+$('#btnPrev').onclick  = ()=>{ stopPlay(); setStep(S.step-1); };
+$('#btnReset').onclick = ()=>{ stopPlay(); setStep(-1); };
+
+/* ---------- 缩放 ---------- */
+function fitZoom(){
+  const vp = $('#viewport'), sc = curScene();
+  S.zoom = Math.max(0.22, Math.min(1, (vp.clientWidth-40)/sc.w));
+  S.fit = true; renderCanvas();
+}
+function zoomBy(f){ S.zoom = Math.min(2.5, Math.max(0.2, S.zoom*f)); S.fit=false; renderCanvas(); }
+$('#zoomIn').onclick  = ()=>zoomBy(1.15);
+$('#zoomOut').onclick = ()=>zoomBy(1/1.15);
+$('#zoomFit').onclick = ()=>fitZoom();
+$('#viewport').addEventListener('wheel', e=>{
+  if(!e.ctrlKey) return;
+  e.preventDefault(); zoomBy(e.deltaY<0 ? 1.08 : 1/1.08);
+}, {passive:false});
+/* 点画布空白处（或分组框）收起详情面板 */
+$('#viewport').addEventListener('click', e=>{
+  if(e.target.closest && e.target.closest('.node')) return;
+  closeInspector();
+});
+/* 搜索框回车：直接跳到第一条结果 */
+$('#nodeSearch').addEventListener('keydown', e=>{
+  if(e.key !== 'Enter') return;
+  const first = $('#nodeList li[data-nid]');
+  if(first) selectNode(first.dataset.nid, true);
+});
+window.addEventListener('resize', ()=>{ if(S.view==='map' && S.fit) fitZoom(); });
+document.addEventListener('keydown', e=>{
+  if(S.view!=='map' || (e.target && /INPUT|SELECT|TEXTAREA/.test(e.target.tagName))) return;
+  if(e.key==='ArrowRight'){ stopPlay(); setStep(S.step+1); }
+  if(e.key==='ArrowLeft'){ stopPlay(); setStep(S.step-1); }
+});
+
+/* ============================================================
+   模块与坑
+   ============================================================ */
+const LV_COLOR = {'🔴':'#dc2626','🟡':'#d97706','🟢':'#16a34a'};
+function renderModules(){
+  $('#moduleList').innerHTML = MODULES.map(m=>
+    '<li data-mid="'+m.id+'" class="'+(m.id===S.moduleId?'active':'')+'"><span class="dot c-'+m.k+'" style="background:var(--nc)"></span>'+
+    '<span>'+esc(m.name)+'<small>'+esc(m.badge||'')+'</small></span></li>').join('');
+  $$('#moduleList li').forEach(li=>li.onclick=()=>{ S.moduleId=li.dataset.mid; renderModules(); $('.doc').scrollTop=0; });
+  renderModuleDoc();
+}
+function renderModuleDoc(){
+  const m = MODULES.filter(x=>x.id===S.moduleId)[0];
+  let h = '<h2 class="c-'+m.k+'" style="color:var(--nc)">'+esc(m.name)+'</h2>';
+  h += '<p class="lead">'+esc(m.badge||'')+'　|　'+m.nodes.length+' 个关键节点　|　'+m.pits.length+' 个重点坑'+
+       (m.jump? ' <button class="jumpbtn" data-scene="'+m.jump[0]+'" data-node="'+m.jump[1]+'">在地图上定位 →</button>' : '')+
+       '</p>';
+  h += '<div class="card c-'+m.k+'"><h3><span class="k"></span>它解决什么问题</h3>'+
+       '<p style="margin:0;font-size:13.2px;color:var(--fg2)">'+esc(m.pain)+'</p></div>';
+
+  h += '<div class="card"><h3>关键节点</h3><table><thead><tr><th style="width:210px">节点</th><th>它干嘛 / 为什么这么写</th></tr></thead><tbody>'+
+       m.nodes.map(n=>'<tr><td class="nm">'+esc(n.n)+'</td><td>'+esc(n.w)+
+         (n.tune? '<br><span style="color:var(--accent);font-size:12px">⚙ 可调：'+esc(n.tune)+'</span>' : '')+
+         '</td></tr>').join('')+
+       '</tbody></table></div>';
+
+  h += '<div class="card"><h3>这个模块最容易踩的坑</h3>'+
+       m.pits.map(p=>'<div class="pit-card" style="--lc:'+(LV_COLOR[p.lv]||'#64748b')+'">'+
+         '<div class="hd">'+p.lv+' '+esc(p.title)+'<span>'+esc(p.where||'')+'</span></div>'+
+         '<div class="r"><b>现象</b><span class="sym">'+esc(p.sym)+'</span></div>'+
+         '<div class="r"><b>根因</b><span>'+esc(p.cause)+'</span></div>'+
+         '<div class="r"><b>解决</b><span class="fix">'+esc(p.fix)+'</span></div>'+
+       '</div>').join('')+'</div>';
+
+  h += '<div class="card"><h3>涉及文件</h3><div class="flow-chips">'+
+       m.files.map(f=>'<span class="fc" style="font-family:var(--mono);font-size:11.5px;color:var(--fg2)">'+esc(f.p)+'</span>').join('')+
+       '</div></div>';
+  h += '<div class="note">数据流：'+m.flow.map(esc).join(' → ')+'</div>';
+  $('#moduleDoc').innerHTML = h;
+  $$('#moduleDoc .jumpbtn').forEach(b=>b.onclick=()=>{
+    S.sceneId = b.dataset.scene; S.fit = true; S.sel = null; S.step = -1;
+    setView('map');
+    selectNode(b.dataset.node, true);
+  });
+}
+
+/* ============================================================
+   必背与路线
+   ============================================================ */
+function renderMust(){
+  let h = '<h2>必背与学习路线</h2><p class="lead">先记住这条主线，再回答下面 8 个问题 —— 能讲清它们，这个项目就算真懂了。</p>';
+  h += '<div class="note" style="font-size:13.5px"><b>核心主线：</b>'+esc(MUST.mainline)+'</div>';
+
+  h += '<div class="card"><h3>必背 8 问（面试 / 复盘直接用）</h3>'+
+       MUST.qa.map(x=>'<div class="qa"><b>'+esc(x.q)+'</b><p>'+esc(x.a)+'</p></div>').join('')+'</div>';
+
+  h += '<div class="grid2">';
+  h += '<div class="card"><h3>当前基线（评估与测试）</h3>'+
+       MUST.baseline.map(b=>'<div class="stat"><b>'+esc(b.k)+'</b><i>'+esc(b.v)+'</i><span>'+esc(b.d)+'</span></div>').join('')+'</div>';
+  h += '<div class="card"><h3>后续优化</h3><ul class="tick">'+
+       MUST.todo.map(t=>'<li class="'+(t.done?'done':'')+'">'+esc(t.t)+'</li>').join('')+'</ul></div>';
+  h += '</div>';
+
+  h += '<div class="card"><h3>模块顺序（磨透一个再下一个）</h3><ul class="steps">'+
+       MUST.steps.map(s=>'<li><span class="no">'+esc(s.n)+'</span><div class="bd"><strong>'+esc(s.t)+'</strong>'+
+         '<p>'+esc(s.d)+'</p><p style="color:var(--accent)">🎯 '+esc(s.gate)+'</p></div></li>').join('')+'</ul></div>';
+
+  h += '<div class="note">这份图由项目源码与文档梳理：节点说明来自代码实现与注释，坑与解法来自 README 排坑记录、待处理清单、修复日志和代码里的 TODO。改代码后记得回来更新对应节点。</div>';
+  $('#mustDoc').innerHTML = h;
+}
+
+/* ---------- 启动 ---------- */
+(function init(){
+  let t = 'light';
+  try{ t = localStorage.getItem('p5-theme') || 'light'; }catch(e){}
+  document.documentElement.dataset.theme = t;
+  $('#themeBtn').textContent = (t==='dark')?'☀️':'🌙';
+  const q = {};
+  try{
+    location.search.replace(/^\?/,'').split('&').filter(Boolean).forEach(kv=>{
+      const i = kv.indexOf('='); if(i>0) q[decodeURIComponent(kv.slice(0,i))] = decodeURIComponent(kv.slice(i+1));
+    });
+  }catch(e){}
+  if(q.theme==='dark'||q.theme==='light'){ document.documentElement.dataset.theme=q.theme; $('#themeBtn').textContent=(q.theme==='dark')?'☀️':'🌙'; }
+  if(q.scene && SCENES.some(s=>s.id===q.scene)) S.sceneId = q.scene;
+  if(q.module && MODULES.some(m=>m.id===q.module)) S.moduleId = q.module;
+  let sideOff = false;
+  try{ sideOff = localStorage.getItem('p5-side')==='1'; }catch(e){}
+  if(sideOff){ $$('.side').forEach(s=>s.classList.add('collapsed')); $('#sideBtn').classList.add('on'); }
+  renderScene();
+  setView(['map','modules','must'].indexOf(q.view)>=0 ? q.view : 'map');
+  if(q.step){ const k = parseInt(q.step,10); if(!isNaN(k)) setStep(k-1); }
+  if(q.sel){ setTimeout(()=>selectNode(q.sel,true), 60); }
+  setTimeout(fitZoom, 30);
+})();
+</script>
+</body>
+</html>

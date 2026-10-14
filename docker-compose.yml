@@ -11,7 +11,10 @@ services:
       POSTGRES_PASSWORD: p5-secret
       POSTGRES_DB: knowledge_base
     ports:
-      - "5432:5432"                    # 宿主机 5432 → 容器 5432（后端连这里）
+      # 宿主机 5434 → 容器 5432：本机 5432 被 project6 的 pgvector 占用，避开它。
+      # 容器内互访不受影响（backend 连服务名 postgres + 容器内 5432）；
+      # 暴露宿主端口只是给裸机调试用（裸机 .env 里配 DATABASE_PORT=5434）。
+      - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data   # 数据持久化：容器删了库还在
     healthcheck:
@@ -38,6 +41,7 @@ services:
     environment:
       DATA_DIR: /app/outputs # 覆盖默认：容器里数据必须写到挂载卷
       DATABASE_HOST: postgres # 覆盖默认：容器里数据库地址用 compose 服务名，不是 localhost
+      DATABASE_PORT: 5432 # 覆盖 .env 里的 5434：容器内直连 postgres 服务，不分宿主机映射端口
       LANGFUSE_HOST: http://langfuse:3000 # 覆盖默认：容器里面板地址用 compose 服务名（localhost 指向容器自己）
     volumes:
       - ./outputs:/app/outputs

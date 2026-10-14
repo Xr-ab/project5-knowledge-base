@@ -1,7 +1,7 @@
 # Langfuse 自托管 v2（技术雷达 Demo 用，最简：只需要 langfuse + postgres）
 # 用法: docker compose -f docker-compose.langfuse.yml up -d
 # 面板: http://localhost:8080  （headless 初始化自动建好 org/project，无需手动注册）
-# 注意端口避开 project5 的 postgres(5432)，Langfuse 的库走 5433
+# 注意端口避开本机其他 postgres（project5=5434、project6=5432），Langfuse 的库走 5433
 # 注意 postgres 服务名避开 project5 的 postgres——两个 compose 同名会互相重建容器！
 services:
   langfuse:

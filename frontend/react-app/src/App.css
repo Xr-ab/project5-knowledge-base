@@ -239,6 +239,19 @@ body {
 .thread-delete:hover { background: #ffe3e3; color: #d64545; }
 .thread-empty { padding: 16px 12px; color: #999; font-size: 13px; }
 
+/* 退出登录：侧边栏底部一行小按钮（存在感低，但随时可达） */
+.logout-btn {
+  margin: 8px 12px 12px;
+  padding: 8px;
+  border: 1px solid #e2e5ea;
+  border-radius: 10px;
+  background: #fff;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+}
+.logout-btn:hover { color: #d64545; border-color: #f2c4c4; background: #fff6f6; }
+
 /* 空状态欢迎语：主区一条消息都没有时居中显示，避免一片白 */
 .empty-state {
   margin: auto;            /* 在 .message-list 里垂直+水平居中 */
@@ -368,4 +381,25 @@ body {
   color: #d32f2f;
   font-size: 13px;
   text-align: center;
+}
+
+/* 登录/注册卡片底部：切换入口（一行小字 + 链接样按钮） */
+.auth-switch {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  color: #888;
+}
+/* 链接样按钮要重置掉 .login-form button 的蓝底样式（故意用更高特异性覆盖） */
+.login-form .auth-switch-link {
+  padding: 0 2px;
+  border: none;
+  background: none;
+  color: #4c8dff;
+  font-size: 13px;
+  cursor: pointer;
+}
+.login-form .auth-switch-link:hover {
+  background: none;
+  text-decoration: underline;
 }

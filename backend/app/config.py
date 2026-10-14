@@ -60,7 +60,8 @@ class Settings(BaseSettings):
     langfuse_host: str = "http://localhost:8080"          # 本地自托管面板地址
     data_dir: Path = DATA_DIR                             # 数据落盘目录（数据库/向量库都在这）
     jwt_secret: str = "dev-secret-key-change-me"          # JWT 签名密钥（先给个开发用默认值，生产必须换）   
-    database_host: str = "localhost"                      # 数据库地址：裸机默认本机；容器里由 compose 注入 postgres    
+    database_host: str = "localhost"                      # 数据库地址：裸机默认本机；容器里由 compose 注入 postgres
+    database_port: int = 5432                             # 数据库端口：容器里由 compose 注入 5432；裸机 .env 设 5434（避开 project6）
     # 从项目根目录 .env 读值；extra="allow" 容忍文件里多余键
     model_config = SettingsConfigDict(env_file=PROJECT_ROOT / ".env", extra="allow")
 
@@ -69,9 +70,12 @@ class Settings(BaseSettings):
         """Postgres 连接串（开发阶段先写死，值对应 docker-compose 里 postgres 服务）。
 
         格式：协议+驱动://用户名:密码@地址:端口/库名。
+        端口不写死：本机 5432 被 project6 的 pgvector 占着，project5 的 postgres
+        在宿主机映射到 5434（见 docker-compose.yml）——裸机 .env 里设 DATABASE_PORT=5434；
+        容器里由 compose 注入 DATABASE_PORT=5432（容器内互访走服务名 postgres）。
         注意：密码直接写在代码里只适合本地开发，生产必须挪到 .env。
         """
-        return f"postgresql+asyncpg://postgres:p5-secret@{self.database_host}:5432/knowledge_base"
+        return f"postgresql+asyncpg://postgres:p5-secret@{self.database_host}:{self.database_port}/knowledge_base"
     @property
     def chroma_dir(self) -> Path:
         """向量库目录（Chroma 数据落盘位置，在 outputs/ 下）。"""

@@ -25,7 +25,10 @@ def create_model(streaming: bool = False, callbacks=None) -> BaseChatModel:
 
 def build_retrieval_graph(checkpointer: BaseCheckpointSaver, callbacks=None) -> CompiledStateGraph:
     """组装 Agent 图：模型 + 工具 + 提示词 + 记忆 → 一张可调用的图。"""
-    model = create_model(callbacks=callbacks)
+    # ⚠️ streaming=True 必须显式传：create_model 的默认值是 False，
+    # 漏传的话模型会一次性返回整段（实测 183 字只产生 1 个 llm_chunk），
+    # 前端就没有打字机效果、只能干等十几秒。
+    model = create_model(streaming=True, callbacks=callbacks)
     return create_agent(
         model=model,
         tools=tools,                  # chat/tools.py 里的两个工具
