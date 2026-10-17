@@ -1,3 +1,3 @@
-# GitHub 语言统计：把这个交互式架构图当作文档，不计入仓库主语言。
-# 否则单个 125KB 的 HTML 占了全库近一半体积，会把主语言误判成 HTML（实际是 Python/TS）。
-项目架构交互地图.html linguist-documentation
+# GitHub 语言统计：把根目录这个交互式架构图（由构建脚本生成的前端产物）排除掉。
+# 否则单个 125KB 的 HTML 占了全库近一半体积，会把仓库主语言误判成 HTML（实际是 Python/TS）。
+项目架构交互地图.html linguist-generated linguist-documentation linguist-detectable=false
