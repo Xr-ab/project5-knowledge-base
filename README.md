@@ -1,12 +1,10 @@
 # project5 —— 全栈 AI 知识库（React 版）
 
-参考开源项目 `LangGraph-RAG-Agent-main` 的 RAG/Agent 链路思路，**重写并补齐产品化模块**，做成一个可部署的全栈产品：上传私有文档 → RAG/Agent 问答。React 前端 + FastAPI 后端 + LangGraph Agent + 本地向量库，Docker Compose 一键部署。
+RAG/Agent 链路思路参考开源项目 `LangGraph-RAG-Agent-main`；**用户系统、文档管理、会话与文档隔离、评测体系、前端与部署均为独立实现**。做成一个可部署的全栈产品：上传私有文档 → RAG/Agent 问答。React 前端 + FastAPI 后端 + LangGraph Agent + 本地向量库，Docker Compose 一键部署。
 
-<!-- 截图待补（放 2 张即可：问答页 + Langfuse trace 图）
-     存到 docs/screenshots/ 后，把下面两行取消注释并删掉本注释：
-     ![问答页](docs/screenshots/chat.png)
-     ![Langfuse trace](docs/screenshots/langfuse-trace.png)
--->
+| 知识库问答（上传文档后基于片段作答） | 登录页 |
+|---|---|
+| ![问答](assets/screenshots/01-rag-answer.png) | ![登录](assets/screenshots/02-login.png) |
 
 ---
 
