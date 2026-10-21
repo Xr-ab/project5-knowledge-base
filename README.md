@@ -147,7 +147,7 @@ backend/eval/
 | 有答案题假阴率 | 0.0 | 0.0 | 有资料却说没有的比例 |
 | 检索耗时 | 4 ms | 0.96 s | 单次查询，CPU/ONNX |
 
-生成评估（LLM-as-Judge，单文档 10 题基线）：平均正确性 **5.0 / 5**、平均忠实度 **4.7 / 5**（#3 的 2 分为 Judge 误判，人工抽查校正）。语料扩到 8 份后尚未完整重跑。
+生成评估（LLM-as-Judge，单文档 10 题基线）：平均正确性 **5.0 / 5**、平均忠实度 **4.7 / 5**（#3 的 2 分为 Judge 误判，人工抽查校正）。26 题版正在分批重跑（脚本支持 `--limit` 断点续跑，见 7.7）。
 
 ### 7.3 一轮完整实验记录（每次只改一个变量）
 
@@ -201,12 +201,20 @@ backend/eval/
 
 ```bash
 cd backend
+# 检索评估（不需要调 LLM，随便跑）
 ..\.venv\Scripts\python.exe -m eval.retrieval_eval --rerank                    # 生产配置
 ..\.venv\Scripts\python.exe -m eval.retrieval_eval --no-rerank                 # 关精排对照
 ..\.venv\Scripts\python.exe -m eval.retrieval_eval --rerank --recall-n 9       # 改粗召池
 ..\.venv\Scripts\python.exe -m eval.retrieval_eval --rerank --no-min-score     # 不丢低分片段
 ..\.venv\Scripts\python.exe -m eval.retrieval_eval --rerank --rerank-model BAAI/bge-reranker-base  # 换精排模型
+
+# 生成评估（LLM-as-Judge，每题 2 次 LLM 调用）
+..\.venv\Scripts\python.exe -m eval.generation_eval                # 全部跑完
+..\.venv\Scripts\python.exe -m eval.generation_eval --limit 5      # 只跑 5 题
+..\.venv\Scripts\python.exe -m eval.generation_eval --rerun        # 丢掉旧结果重跑
 ```
+
+生成评估是**断点续跑**的：每答完一题立刻落盘到 `reports/generation_<模型名>.json`，重跑时自动跳过已完成的题号。所以要调 LLM 的评估不怕中途断（余额不足 / 限流 / 网络抖动很常见），补上余额再跑同一条命令就从断点继续，前面已经花掉的钱不会白花。
 
 每次运行会把完整结果写进 `backend/eval/reports/`（含每题的命中情况、分数、阈值扫描表），不同配置的报告名带 `_nor` / `_rr` / `_rr9` 等后缀，可以并存对照。
 
