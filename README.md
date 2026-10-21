@@ -208,6 +208,32 @@ backend/eval/
 
 12 比 18 只差 0.015 MRR，耗时少 1/3，所以默认 `k*4` 而不是常见的 `k*6`。
 
+#### 顺带试过：k 从 3 加到 5 —— k 不是瓶颈
+
+多跳题的 `doc_hit` 一直是 0（5 道全灭），直觉上会怀疑"k=3 装不下两份文档"。实测这个直觉不成立，而且先踩了两个坑：
+
+| 配置 | doc_hit | chunk_hit | MRR | 多跳 doc_hit | 实际返回 |
+|---|---|---|---|---|---|
+| k=3（生产） | 0.7826 | 0.9565 | 0.8261 | 0.0 | 78/78 |
+| k=5，池 12 | 0.7826 | 0.9565 | 0.8261 | 0.0 | **83/130** |
+| k=5，池 12，不丢低分 | 0.7826 | 1.0000 | 0.8478 | 0.0 | 130/130 |
+| k=5，池 12，不丢 + 每文档≤2 | **0.8261** | 1.0000 | 0.8478 | **0.2** | 130/130 |
+| k=5，池 20，不丢 + 每文档≤2 | 0.8261 | 1.0000 | 0.8442 | 0.2 | 130/130 |
+
+**坑一：`k=5` 可能根本没生效。** `rerank_min_score=0` 会丢掉负分片段，26 题只凑出 83/130 条，有 5 道题只剩 1 条 —— k 设成 5 和设成 3 的指标一字不差，差点被当成"加大 k 没用"。**加 k 之前先看 `chunks_returned`。**
+
+**坑二：不加多样性约束时，k 多出来的容量全被同一份文档吃掉。** 5 道多跳题的 top-5 **每一道都有重复占位**，而 gold 里缺的那份文档进 top-5 的次数是 **0**：
+
+| 题号 | 需要 | top-5 实际 |
+|---|---|---|
+| #15 | 41号 + 42号 | 41号×2、survey、platform×2 |
+| #16 | 41号 + 42号 | 41号×2、sonar×3 |
+| #26 | survey + 手册 | survey×3、41号×2 |
+
+加上「每文档最多 2 位」（`--quota 2`）后 #16 被救回，多跳从 0/5 变 1/5 —— 位置腾出来就立刻有用。池子从 12 加到 20 没有额外收益、MRR 反而微跌 0.0036，说明不是召回深度不够。
+
+**剩下 4 道的病根是 41/42 两份同构文档分不开，跟 k 无关。** 直接查 #15 的召回：`bluewhale42_full.txt` 在纯向量 top-20 里排 14/15/18，41 号占了前 8 位里的 5 个；精排后 42 号被压到 13/15/20。「41号」「42号」一字之差，向量几乎无感 —— 这类**精确标识符匹配是关键词检索（BM25 / 全文索引）的活**，纯向量做不了。这也是 project6 上混合检索（pgvector + tsvector + RRF 融合）的原因。
+
 ### 7.6 引用分档的依据
 
 引用卡片上的「高/中/低」不是拍脑袋定的。实测所有题返回片段的精排分：**含答案的片段**中位数 3.83、p10 2.67；**不含答案的片段**中位数 1.74。所以 `高 ≥ 3`（明确命中）、`中 ≥ 1`（沾边）、`低 < 1`（基本无关）。低档不设成 `< 0`，因为 `rerank_min_score=0` 已经把负分片段丢掉了，那样这个档位永远显示不出来。
@@ -220,6 +246,8 @@ cd backend
 ..\.venv\Scripts\python.exe -m eval.retrieval_eval --rerank                    # 生产配置
 ..\.venv\Scripts\python.exe -m eval.retrieval_eval --no-rerank                 # 关精排对照
 ..\.venv\Scripts\python.exe -m eval.retrieval_eval --rerank --recall-n 9       # 改粗召池
+..\.venv\Scripts\python.exe -m eval.retrieval_eval --rerank --k 5 --no-min-score            # 加 k（先关丢弃，否则凑不满）
+..\.venv\Scripts\python.exe -m eval.retrieval_eval --rerank --k 5 --no-min-score --quota 2   # 加 k + 每文档≤2 位
 ..\.venv\Scripts\python.exe -m eval.retrieval_eval --rerank --no-min-score     # 不丢低分片段
 ..\.venv\Scripts\python.exe -m eval.retrieval_eval --rerank --rerank-model BAAI/bge-reranker-base  # 换精排模型
 

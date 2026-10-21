@@ -251,6 +251,25 @@ def threshold_sweep(per_question: list[dict], thresholds=SWEEP_THRESHOLDS) -> li
     return rows
 
 
+def subset_metrics(subset: list[dict]) -> dict:
+    """一组题的三项核心指标（doc_hit / chunk_hit / MRR）。
+
+    抽出来是为了**按题型分组**看：多跳题只有 3 道，混在 23 道里有答案题里会被
+    平均掉——总指标涨跌 0.02 可能对应的正是"多跳题全中/全灭"这种结构性变化。
+    验证"加大 k 对跨文档题有没有用"，必须看分组，不能只看总分。
+    """
+    n = len(subset)
+    if not n:
+        return {"n": 0}
+    hit = [q for q in subset if q["chunk_first_hit_rank"]]
+    return {
+        "n": n,
+        "doc_hit": round(sum(q["doc_hit"] for q in subset) / n, 4),
+        "chunk_hit": round(len(hit) / n, 4),
+        "mrr": round(sum(1 / q["chunk_first_hit_rank"] for q in hit) / n, 4),
+    }
+
+
 async def eval_retrieval(
     col: chromadb.Collection, cases: list[dict], k: int = K,
     per_doc_limit: int = PER_DOC_LIMIT, use_rerank: bool = USE_RERANK,
@@ -317,6 +336,11 @@ async def eval_retrieval(
             "scored_cases": len(scored),
             "no_answer_cases": len(no_answer),
         },
+        # 按题型分组：single（单点事实）/ multi_hop（跨片段、跨文档）/ no_answer（陷阱题）
+        "by_type": {
+            t: subset_metrics([q for q in per_question if q["type"] == t])
+            for t in ("single", "multi_hop", "no_answer")
+        },
         "threshold_sweep": threshold_sweep(
             per_question,
             RERANK_SWEEP_THRESHOLDS if use_rerank else SWEEP_THRESHOLDS,
@@ -327,6 +351,14 @@ async def eval_retrieval(
 
 async def main():
     rebuild = "--rebuild" in sys.argv
+    # --k N 覆盖最终返回条数（默认 K=3，与线上 retrieve_user_documents 一致）。
+    # ⚠️ 粗召池默认是 k*4，所以改 k 会连带把池子一起变大。想单独量"k 的影响"，
+    # 必须同时用 --recall-n 把池子钉死，否则量到的是两个变量的合力。
+    k = K
+    if "--k" in sys.argv:
+        k = int(sys.argv[sys.argv.index("--k") + 1])
+    k_tag = f"_k{k}" if k != K else ""
+
     # --quota N 覆盖文档配额（0 = 关闭，用来做 A/B 对照）
     quota = PER_DOC_LIMIT
     if "--quota" in sys.argv:
@@ -365,13 +397,13 @@ async def main():
     col, files = await build_eval_collection(rebuild=rebuild)
 
     print(f"语料 {len(files)} 份 → 集合切片数 {col.count()}")
-    print(f"测试集 {len(cases)} 题，k={K}，每文档配额={'不限' if not quota else quota}")
+    print(f"测试集 {len(cases)} 题，k={k}，每文档配额={'不限' if not quota else quota}")
     print(f"embedding: {MODEL_NAME} | 精排: {'开（' + rerank_model + '）' if use_rerank else '关'}")
     if use_rerank:
-        print(f"粗召池: {recall_n or K * 4} 条")
+        print(f"粗召池: {recall_n or k * 4} 条")
 
     result = await eval_retrieval(
-        col, cases, per_doc_limit=quota, use_rerank=use_rerank, recall_n=recall_n
+        col, cases, k=k, per_doc_limit=quota, use_rerank=use_rerank, recall_n=recall_n
     )
 
     report = {
@@ -388,7 +420,7 @@ async def main():
         "rerank": {
             "enabled": use_rerank,
             "model": rerank_model if use_rerank else None,
-            "recall_n": (recall_n or K * 4) if use_rerank else None,
+            "recall_n": (recall_n or k * 4) if use_rerank else None,
             "min_score": settings.rerank_min_score if use_rerank else None,
         },
         "corpus": {
@@ -407,13 +439,20 @@ async def main():
     }
 
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
-    out = REPORT_DIR / f"retrieval_{SPLIT_TAG}{CHUNK_SIZE}_{CTX_TAG}_{quota_tag}_{MODEL_TAG}_{rerank_tag}.json"
+    out = REPORT_DIR / f"retrieval_{SPLIT_TAG}{CHUNK_SIZE}_{CTX_TAG}_{quota_tag}_{MODEL_TAG}_{rerank_tag}{k_tag}.json"
     out.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
     print("\n=== 指标 ===")
     print(f"  embedding             {MODEL_NAME}（{embeddings.dim} 维）")
     for k_name, v in result["metrics"].items():
         print(f"  {k_name:<20} {v}")
+
+    print("\n=== 按题型分组（看加大 k 到底帮到谁）===")
+    print("  题型          题数   doc_hit  chunk_hit  MRR")
+    for t, m in result["by_type"].items():
+        if not m["n"]:
+            continue
+        print(f"  {t:<12} {m['n']:>4}   {m['doc_hit']:<8} {m['chunk_hit']:<10} {m['mrr']}")
 
     n_scored = result["counts"]["scored_cases"]
     n_no_answer = result["counts"]["no_answer_cases"]

@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-10-21T15:27:53",
-  "git_commit": "45e495b",
-  "command": "eval/retrieval_eval.py --rerank",
+  "generated_at": "2026-10-21T16:32:12",
+  "git_commit": "1f7b812",
+  "command": "D:\\工程学习\\project5-ai-knowledge-base\\backend\\eval\\retrieval_eval.py --rerank",
   "embedding": {
     "model": "BAAI/bge-small-zh-v1.5",
     "dim": 512
@@ -56,6 +56,26 @@
   "counts": {
     "scored_cases": 23,
     "no_answer_cases": 3
+  },
+  "by_type": {
+    "single": {
+      "n": 18,
+      "doc_hit": 1.0,
+      "chunk_hit": 1.0,
+      "mrr": 0.8704
+    },
+    "multi_hop": {
+      "n": 5,
+      "doc_hit": 0.0,
+      "chunk_hit": 0.8,
+      "mrr": 0.6667
+    },
+    "no_answer": {
+      "n": 3,
+      "doc_hit": 0.0,
+      "chunk_hit": 0.0,
+      "mrr": 0.0
+    }
   },
   "threshold_sweep": [
     {
