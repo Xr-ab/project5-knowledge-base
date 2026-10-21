@@ -57,6 +57,11 @@ class Settings(BaseSettings):
     # 只改这三个值（model_name / model_base_url / .env 的 key），代码一行不动。
     model_name: str = "glm-4-flash"                       # 模型名
     model_base_url: str | None = "https://open.bigmodel.cn/api/paas/v4"  # 智谱的 API 地址
+    # 聊天用的采样温度。低调的原因：RAG 问答要的是"照资料说"，不是创作。
+    # 实测 GLM-4-Flash 在默认温度下约 1/3 概率在"调工具那一轮"写出
+    # 「我需要查找相关文档」这类内心独白（同一问题跑 3 次，1 次 52 个 chunk，2 次 12 个）。
+    # 评估脚本不受影响：它显式传 temperature=0.2，所以 26 题分数与这里无关。
+    llm_temperature: float = 0.3
     embeddings_model_name: str = "BAAI/bge-small-zh-v1.5"  # 向量模型（粗召，512 维，无需 key）
     reranker_model_name: str = "BAAI/bge-reranker-v2-m3-int8"  # 精排模型（交叉编码，0.57GB）
     rerank_enabled: bool = True                           # 检索是否走两段式（粗召 → 精排）
@@ -66,6 +71,13 @@ class Settings(BaseSettings):
     #   交叉编码看到「问两者差异，这段只讲了一个」时会正确打低分，而那半条证据
     #   其实对模型有用。所以这里保底永远留 top-1，绝不清空。
     rerank_min_score: float | None = 0.0
+    # 文档配额：同一份文档最多占 k 个名额里的几个（0 = 不限）。
+    # ⚠️ 默认关闭，因为实测在 k=3 下**零收益**：文档级命中/mrr 一字不差，却少返回 2 条证据
+    #   （78→61），因为真正的瓶颈是"第二份文档没进候选池"，不是"名额被同文档占了"。
+    #   唯一有正收益的组合要同时满足 k=5 + 不丢低分 + 配额 2（doc_hit 0.7826→0.8261），
+    #   但收益只来自 1 道题（#16），且"不丢低分"与 rerank_min_score 的取舍冲突。
+    #   留着这个开关是为了调大 k 时能一键打开，不要指望单开它有效。
+    retrieval_per_doc_limit: int = 0
     bocha_api_key: str                                    # 博查搜索 Key（必填，模块 5 用）
     # Langfuse 可观测性（技术雷达 Demo）：本地面板 http://localhost:8080
     # key 由 docker-compose.langfuse.yml 的 LANGFUSE_INIT_* 自动初始化，与 compose 保持一致

@@ -18,6 +18,7 @@ def create_model(streaming: bool = False, callbacks=None) -> BaseChatModel:
         model=settings.model_name,          # 模型名：glm-4-flash（换服务商改 config.py）
         api_key=settings.api_key,           # 密钥（SecretStr 也能直接吃）
         base_url=settings.model_base_url,   # https://open.bigmodel.cn/api/paas/v4
+        temperature=settings.llm_temperature,  # 低温：RAG 要照资料说，别自由发挥（见 config 注释）
         streaming=streaming,                # 是否流式（问答时要 True）
         callbacks=callbacks,
     )

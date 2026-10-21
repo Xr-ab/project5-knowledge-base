@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-10-21T16:32:12",
-  "git_commit": "1f7b812",
+  "generated_at": "2026-10-21T16:59:16",
+  "git_commit": "6f8285a",
   "command": "D:\\工程学习\\project5-ai-knowledge-base\\backend\\eval\\retrieval_eval.py --rerank",
   "embedding": {
     "model": "BAAI/bge-small-zh-v1.5",

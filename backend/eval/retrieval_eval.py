@@ -99,7 +99,7 @@ CTX_TAG = "ctx" if USE_DOC_CONTEXT else "plain"
 #    多跳题失败的真因不是霸榜，而是检索根本没找对（#15 两份 whale 文档一份都没进 top3），
 #    那是 query decomposition 要解决的问题。故默认关闭。
 # 配额只影响挑选策略、不影响向量，所以不进集合名（不用重建集合）。
-PER_DOC_LIMIT = 0
+PER_DOC_LIMIT = settings.retrieval_per_doc_limit  # 跟生产同一个开关（单一真相源），--quota 可覆盖
 QUOTA_TAG = f"q{PER_DOC_LIMIT}" if PER_DOC_LIMIT else "nq"
 
 # 是否启用两段式精排（D 实验的自变量）。精排不改向量，所以不进集合名，只进报告名。

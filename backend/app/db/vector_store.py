@@ -212,12 +212,20 @@ async def query_with_sources(
     所以返回条数可能少于 k ——这是有意的，凑数的垃圾片段对模型只有干扰。
 
     per_doc_limit：同一份文档最多占几个名额，作用于**精排后的最终排序**。
+    None = 读配置 settings.retrieval_per_doc_limit（默认 0 = 不限）；
+    显式传 0 也可强制关闭。
     """
     col = collection or _collection
     total = col.count()
     k = min(k, total)  # 库里片数不够 k 会报错，先掐到上限
     if k == 0:
         return []
+
+    # 配额开关：显式传参优先，否则跟配置走（0/None 一律视为关闭）
+    if per_doc_limit is None:
+        per_doc_limit = settings.retrieval_per_doc_limit or None
+    elif per_doc_limit == 0:
+        per_doc_limit = None
 
     use_rerank = settings.rerank_enabled if use_rerank is None else use_rerank
     if use_rerank:
