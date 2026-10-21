@@ -28,6 +28,19 @@ async def ensure_thread_owned(thread_id: uuid.UUID, user_id: uuid.UUID, session:
     await get_thread(thread_id, user_id, session)
 
 
+async def ensure_document_owned(document_id: uuid.UUID, user_id: uuid.UUID, session: AsyncSession) -> None:
+    """校验"这个文档属于你的某个会话"——不是你的 → 404。
+
+    和 ensure_thread_owned 只差入口参数：那边拿到的是 thread_id，
+    这边拿到的是 document_id，所以先查出文档、取它的 thread_id 再复用同一套。
+    删除接口必须在碰向量库之前调它，否则校验会发生在破坏之后。
+    """
+    db_document = await get_document_by_id(document_id, session)
+    if db_document is None:
+        raise NotFoundError(f"Document with ID {document_id} not found.")
+    await ensure_thread_owned(db_document.thread_id, user_id, session)
+
+
 async def get_documents(thread_id: uuid.UUID, user_id: uuid.UUID, session: AsyncSession) -> Sequence[Document]:
     """列出某会话下的文档：先确认这个会话是你的（404），再列文档。"""
     await ensure_thread_owned(thread_id, user_id, session)  # 隔离入口：不是你的会话直接 404

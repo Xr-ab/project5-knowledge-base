@@ -36,6 +36,11 @@ async def chat_stream(thread_id: uuid.UUID, prompt_input: PromptInput, session: 
 
 
 @chat_router.get("/{thread_id}", response_model=list[Message])
-async def get_chat_history(thread_id: uuid.UUID, user: str = Depends(get_current_user)):
+async def get_chat_history(
+    thread_id: uuid.UUID,
+    session: SessionDep,
+    user: str = Depends(get_current_user),
+):
     """看这个会话的聊天记录（没聊过 → 404）。"""
+    await thread_service.get_thread(thread_id, uuid.UUID(user), session)
     return await chat_service.get_chat_history(thread_id)

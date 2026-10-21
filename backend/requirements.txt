@@ -14,7 +14,9 @@ loguru==0.7.3
 sqlalchemy==2.0.52
 asyncpg==0.31.0           # 异步 Postgres 驱动（业务库 SQLAlchemy async 连 Postgres 用）
 aiosqlite==0.22.1          # 异步 SQLite 驱动（langgraph 会话记忆仍在用，先留着）
-chromadb==1.5.9            # 自带 embedding（all-MiniLM-L6-v2，ONNX）
+chromadb==1.5.9            # 向量库（自带的 all-MiniLM-L6-v2 只留作 A/B 对照）
+fastembed==0.9.0           # 中文 embedding（bge-small-zh-v1.5，ONNX 推理，不用装 torch）
+                           # 模型缓存放 outputs/models/fastembed（不要用默认的系统 Temp，会被清）
 
 # 模块4 文档解析
 pypdf==6.16.1

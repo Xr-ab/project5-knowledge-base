@@ -31,6 +31,25 @@ def test_split_text_overlap():
     assert chunks[1].startswith(chunks[0][-200:])
 
 
+# ---------- ① -2 切片边界：不能把句子拦腰截断 ----------
+def test_split_text_respects_sentence_boundary():
+    """递归切分的核心承诺：切口落在标点上，不出残句。
+
+    旧版按字符硬切，"1000 字一刀"会停在句子中间——半句话的向量什么都不像。
+    """
+    sentence = "设备每 30 分钟上浮一次，向岸站回传一次数据。"
+    text = sentence * 40  # 1040 字，400 一片会切出多片
+    chunks = _split_text(text)
+
+    assert len(chunks) > 1
+    # 每片都必须以标点结尾（硬切的话会停在句子中间）
+    assert all(c.endswith(("。", "，", "！", "？", "；")) for c in chunks)
+    # 加 overlap 后会略超 chunk_size，但幅度可控
+    assert all(len(c) <= 400 + 60 for c in chunks)
+    # overlap 只增不减：拼起来的总长不应短于原文
+    assert sum(len(c) for c in chunks) >= len(text)
+
+
 # ---------- ② 向量库：索引 → 搜索 → 隔离 → 删除（注入临时库） ----------
 @pytest.fixture
 def tmp_collection(tmp_path):

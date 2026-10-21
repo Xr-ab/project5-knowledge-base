@@ -8,7 +8,7 @@ from typing import Any, AsyncGenerator, AsyncIterable
 
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PromptInput(BaseModel):
@@ -17,9 +17,14 @@ class PromptInput(BaseModel):
 
 
 class Message(BaseModel):
-    """历史消息（读聊天记录时返回）：role 是 human/ai，content 是内容。"""
+    """历史消息（读聊天记录时返回）。
+
+    role：human/ai；content：正文；
+    sources：这条回答依据的文档片段（引用溯源）——用户消息永远是空列表。
+    """
     role: str
     content: str
+    sources: list[dict] = Field(default_factory=list)
 
 
 class ChatStreamResponse(StreamingResponse):
@@ -72,3 +77,10 @@ class ChatStreamResponse(StreamingResponse):
                 # 工具执行完的结果
                 response = {"type": "tool_result", "name": message.name, "content": message.content}
                 yield json.dumps(response) + "\n"
+                # 引用溯源：工具把结构化来源放在 artifact 里（content 给模型看、artifact 给程序看）。
+                # 有引用就多推一条独立事件，前端据此画卡片；没有就什么也不发。
+                # 独立成一条而不是塞进 tool_result：前端不必解析工具返回的文本就能拿到引用。
+                artifact = message.artifact if isinstance(message.artifact, dict) else {}
+                if artifact.get("sources"):
+                    payload = {"type": "sources", "items": artifact["sources"]}
+                    yield json.dumps(payload, ensure_ascii=False) + "\n"

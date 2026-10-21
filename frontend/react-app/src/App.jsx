@@ -139,6 +139,8 @@ function App() {
         id: i,
         role: m.role === 'human' ? 'user' : 'assistant',
         text: m.content,
+        // 历史引用：后端从 checkpoint 里的 tool artifact 反查出来的，刷新后还在
+        sources: m.sources || [],
       }))
     )
   }
@@ -211,6 +213,7 @@ function App() {
       const decoder = new TextDecoder()    // 字节→文字翻译官
       let buffer = ''                      // 攒着的半行（网络可能半行到达）
       let answer = ''                      // 局部变量：收集完整回复（避免 state 延迟的坑）
+      let sources = []                     // 本轮检索到的引用（sources 事件里来，可能没有）
       let started = false                 // 是否已收到第一个字（用来关掉"思考中"）
 
       while (true) {
@@ -229,12 +232,18 @@ function App() {
             if (!started) { started = true; setAiThinking('') }  // 收到首字，关掉"思考中"
             answer += obj.content
             setAiText(answer)                // 通知界面：更新「正在生成」的气泡
+          } else if (obj.type === 'sources') {
+            // 检索工具把引用放在 artifact 里单独推过来（content 只给模型看）。
+            // 先存局部变量，等流结束挂到这条回答上——不能直接 setState，
+            // 因为引用要跟着"哪条消息"走，而这条消息此刻还没进列表。
+            sources = obj.items || []
           }
         }
       }
 
       // 6. 流结束：把完整回复正式加入列表，清掉临时状态
-      setMessages((prev) => [...prev, { id: Date.now(), role: 'assistant', text: answer }])
+      //    sources 只有检索跑过才有；没检索就是空数组，界面上不画引用区
+      setMessages((prev) => [...prev, { id: Date.now(), role: 'assistant', text: answer, sources }])
       setAiText('')
       setAiThinking('')
       fetchThreads()   // 服务端已自动生成标题，刷新侧边栏（不然新会话一直显示"New Chat"）

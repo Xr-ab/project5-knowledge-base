@@ -51,7 +51,15 @@ class Settings(BaseSettings):
     model_provider: str = "openai"                        # 走 OpenAI 兼容协议接 DeepSeek
     model_name: str = "deepseek-v4-flash"                 # 模型名
     model_base_url: str | None = "https://api.deepseek.com/v1"  # DeepSeek 的 API 地址
-    embeddings_model_name: str = "BAAI/bge-small-zh-v1.5"  # 本地向量模型（模块 4 用，无需 key）
+    embeddings_model_name: str = "BAAI/bge-small-zh-v1.5"  # 向量模型（粗召，512 维，无需 key）
+    reranker_model_name: str = "BAAI/bge-reranker-v2-m3-int8"  # 精排模型（交叉编码，0.57GB）
+    rerank_enabled: bool = True                           # 检索是否走两段式（粗召 → 精排）
+    # 精排后丢掉低于此分的片段（None = 不丢）。0.0 是实测的分界：
+    # 无关片段（问天气/问运维）稳定落在负数，真答案稳定在 0.9 以上。
+    # ⚠️ 代价实测：能丢掉约 19% 的无效片段，但会丢掉 1/23 道多跳题的答案——
+    #   交叉编码看到「问两者差异，这段只讲了一个」时会正确打低分，而那半条证据
+    #   其实对模型有用。所以这里保底永远留 top-1，绝不清空。
+    rerank_min_score: float | None = 0.0
     bocha_api_key: str                                    # 博查搜索 Key（必填，模块 5 用）
     # Langfuse 可观测性（技术雷达 Demo）：本地面板 http://localhost:8080
     # key 由 docker-compose.langfuse.yml 的 LANGFUSE_INIT_* 自动初始化，与 compose 保持一致

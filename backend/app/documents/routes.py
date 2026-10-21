@@ -23,11 +23,11 @@ document_router = APIRouter()
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 上传上限 10MB（规范 §7.4；可调参数，v1 先放常量）
 
 
-async def process_document(document_id: uuid.UUID, temp_path: Path, thread_id: uuid.UUID) -> None:
+async def process_document(document_id: uuid.UUID, temp_path: Path, thread_id: uuid.UUID, file_name: str) -> None:
     """后台：索引进向量库 → 更新状态。请求已返回，用户不等待。"""
     async with async_session() as session:  # 后台任务没有请求的 session，自己开
         try:
-            chunk_count = await index_document(temp_path, document_id, thread_id)
+            chunk_count = await index_document(temp_path, document_id, thread_id, file_name=file_name)
             await document_service.update_status(document_id, "ready", session)
             logger.info(f"处理完成: {document_id} → {chunk_count} 个切片")
         except Exception as e:
@@ -61,8 +61,13 @@ async def upload_document(
     # ⓪ 先验归属：权限都没有就不做任何活（不读文件、不碰磁盘）
     await document_service.ensure_thread_owned(thread_id, uuid.UUID(current_user), session)
 
-    # ① 校验扩展名（早失败：不合法直接拒，不碰磁盘不做脏活）
-    if file.filename is None or Path(file.filename).suffix.lower() not in SUPPORTED_EXTENSIONS:
+    # ① 文件名清洗（挡路径穿越）+ 扩展名校验：不合法直接拒，不碰磁盘不做脏活
+    #    只留最后一段——客户端传 "../../app/main.py" 到这里只会剩 "main.py"
+    raw_name = (file.filename or "").replace("\\", "/")  # Windows 客户端可能传来反斜杠
+    safe_name = Path(raw_name).name
+    if not safe_name or safe_name in {".", ".."}:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="文件名不合法")
+    if Path(safe_name).suffix.lower() not in SUPPORTED_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"不支持的文件类型，允许: {', '.join(sorted(SUPPORTED_EXTENSIONS))}",
@@ -70,7 +75,8 @@ async def upload_document(
 
     tmp_dir = settings.data_dir / "tmp"
     tmp_dir.mkdir(parents=True, exist_ok=True)
-    temp_path = tmp_dir / file.filename
+    # 落盘名用 uuid：同名上传不会互相覆盖，也不把用户给的名字直接带到文件系统上
+    temp_path = tmp_dir / f"{uuid.uuid4().hex}{Path(safe_name).suffix}"
     document_id = None  # 是否已登记数据库——回滚的依据
     try:
         # ② 大小预判：用客户端声明的体积先拦一道，超大文件不白写磁盘（落盘后 stat 兜底，双保险）
@@ -92,17 +98,18 @@ async def upload_document(
             )
 
         # ⑤ 先登记数据库（拿 document_id，status 默认 processing，后台任务再去更新它）
-        document_data = DocumentBase(file_name=file.filename, thread_id=thread_id)
+        #    存清洗后的名字：展示给用户看的是它，落盘的 uuid 名字对用户没意义
+        document_data = DocumentBase(file_name=safe_name, thread_id=thread_id)
         new_document = await document_service.insert_document(document_data, session)
         document_id = new_document.id
 
-        # ⑥ 预约后台任务：响应先返回（202），处理在后台慢慢跑
-        background_tasks.add_task(process_document, new_document.id, temp_path, thread_id)
-        logger.info(f"已接收上传，后台处理中: {file.filename}")
+        # ⑥ 预约后台任务：响应先返回（202），处理在后台慢慢跑；显式传展示名，否则 metadata 记成 uuid
+        background_tasks.add_task(process_document, new_document.id, temp_path, thread_id, safe_name)
+        logger.info(f"已接收上传，后台处理中: {safe_name}")
         return DocumentUploadResponse(
             document_id=document_id,
-            message=f"File {file.filename} received, processing in background.",
-            file_name=file.filename,
+            message=f"File {safe_name} received, processing in background.",
+            file_name=safe_name,
             thread_id=thread_id,
         )
     except HTTPException:
@@ -119,13 +126,16 @@ async def upload_document(
             temp_path.unlink()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"上传失败: {file.filename}",
+            detail=f"上传失败: {safe_name}",
         ) from e
 
 
 @document_router.delete("/{document_id}", response_model=DocumentDeleteResponse)
 async def delete_document(document_id: uuid.UUID, session: SessionDep, current_user: str = Depends(get_current_user)):
-    """删除文档：先清向量库切片，再删数据库记录（只允许删自己会话的）。"""
+    """删除文档：先验归属 → 再清向量库切片 → 再删数据库记录（只允许删自己会话的）。"""
+    # ⓪ 先验归属：不是你的，一个字节都不动（校验必须发生在任何破坏之前）
+    await document_service.ensure_document_owned(document_id, uuid.UUID(current_user), session)
+    # ① 必须先删向量：检索只按 thread_id 过滤，DB 行删了切片还在 → 幽灵引用
     await delete_document_chunks(document_id)  # Chroma 按 document_id 清片（查不到就空操作）
-    await document_service.delete_document(document_id, uuid.UUID(current_user), session)  # 归属校验在 service，不存在/不是你的 404
+    await document_service.delete_document(document_id, uuid.UUID(current_user), session)  # 再删数据库记录
     return DocumentDeleteResponse(message=f"成功删除文档 {document_id}（含向量库切片）")

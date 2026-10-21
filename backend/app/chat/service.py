@@ -121,8 +121,58 @@ async def chat_stream(thread_id: UUID, prompt_input: PromptInput) -> AsyncIterat
             _flush_langfuse_in_background()  # 观测上报丢后台，不拖着响应尾巴等面板
 
 
+def _dedupe_sources(sources: list[dict]) -> list[dict]:
+    """按（文件, 摘要）去重后重新编号。
+
+    一次回答前可能调了多次检索工具（模型会重试），前后召回同一片段很常见；
+    带着重复引用展示会让人以为有好几份证据。
+    """
+    seen: set[tuple] = set()
+    uniq: list[dict] = []
+    for s in sources:
+        key = (s.get("file_name"), s.get("snippet"))
+        if key in seen:
+            continue
+        seen.add(key)
+        uniq.append(s)
+    return [{**s, "index": i} for i, s in enumerate(uniq, start=1)]
+
+
+def _to_history(all_messages: list) -> list[Message]:
+    """把存档里的消息整理成 human/ai，并把工具产出的引用挂到对应的回答上。
+
+    checkpoint 里的真实序列是：
+        Human → AI(只带 tool_calls) → Tool(artifact 带引用) → AI(最终回答)
+    引用属于「这次回答」，所以要挂在它后面那条 AI 上。一次回答前调了多次工具，
+    就把各次的引用攒起来一起挂（再经 _dedupe_sources 去重重编号）。
+    """
+    out: list[Message] = []
+    pending: list[dict] = []  # 攒着的引用，等下一次 AI 回答认领
+
+    for message in all_messages:
+        if message.type == "tool":
+            artifact = getattr(message, "artifact", None)
+            if isinstance(artifact, dict):
+                pending.extend(artifact.get("sources") or [])
+            continue
+        if not message.content:
+            continue  # 中间那条"只带 tool_calls、没正文"的 AI 消息在这里被挡掉
+        if message.type == "human":
+            out.append(Message(role="human", content=message.content))
+        elif message.type == "ai":
+            out.append(
+                Message(role="ai", content=message.content, sources=_dedupe_sources(pending))
+            )
+            pending = []  # 认领完就清空，别串到下一轮
+    return out
+
+
 async def get_chat_history(thread_id: UUID) -> list[Message]:
-    """从存档器翻出该会话的聊天记录（只留 human/ai 消息，工具消息过滤掉）。"""
+    """从存档器翻出该会话的聊天记录。
+
+    只留 human/ai 消息；工具消息不直接展示，但它的 artifact 里的引用会被
+    提取出来挂到紧随其后的那条回答上——这样刷新页面后引用卡片还在。
+    """
     async with get_checkpointer() as checkpointer:
         config = RunnableConfig(
             configurable={"thread_id": str(thread_id), "checkpoint_ns": ""}
@@ -131,8 +181,4 @@ async def get_chat_history(thread_id: UUID) -> list[Message]:
         if checkpoint_tuple is None:  # 这个会话从没聊过 → 404（和 threads 同一个套路）
             raise HTTPException(status_code=404, detail="Chat history not found")
         all_messages = checkpoint_tuple.checkpoint.get("channel_values", {}).get("messages", [])
-        return [
-            Message(role=message.type, content=message.content)
-            for message in all_messages
-            if message.content and message.type in ["human", "ai"]
-        ]
+        return _to_history(all_messages)
