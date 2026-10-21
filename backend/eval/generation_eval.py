@@ -23,16 +23,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from openai import OpenAI
 
 from app.config import settings
-from app.db.vector_store import search_chunks
+from app.db.vector_store import query_with_sources
 from eval.retrieval_eval import (
     EVAL_THREAD_ID,
-    TEST_DOC,
     TEST_SET,
     build_eval_collection,
     load_test_set,
 )
 
-# 和检索评估共用同一份测试集 + 同一个评估集合（一份文档、两套评估）
+# 和检索评估共用同一份测试集 + 同一个评估集合（一份语料、两套评估）
 
 client = OpenAI(api_key=settings.api_key.get_secret_value(), base_url=settings.model_base_url)
 
@@ -91,13 +90,19 @@ async def judge_answer(question: str, context: str, expected: str, answer: str) 
 
 async def main():
     cases = load_test_set()
-    col = await build_eval_collection()
+    # build_eval_collection 返回 (集合, 语料文件列表)——检索评估要用文件清单算 digest，
+    # 这里只关心集合，第二个返回值丢掉
+    col, _files = await build_eval_collection()
     print(f"评估 {len(cases)} 条问题，等待模型逐条打分…\n")
 
     rows = []
     for case in cases:
-        chunks = await search_chunks(case["question"], EVAL_THREAD_ID, k=3, collection=col)
-        context = "\n\n".join(chunks)
+        # 用生产同一个检索入口（含两段式精排）：生成评估要量的是"线上那套检索
+        # 喂给模型什么"，不是另一条只有向量的分支——否则正确性分数是虚的。
+        found = await query_with_sources(
+            case["question"], EVAL_THREAD_ID, k=3, collection=col
+        )
+        context = "\n\n".join(r["text"] for r in found)
         answer = await generate_answer(case["question"], context)
         scores = await judge_answer(
             case["question"], context, case["expected_answer"], answer

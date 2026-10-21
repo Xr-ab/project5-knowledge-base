@@ -1,0 +1,522 @@
+{
+  "generated_at": "2026-10-21T13:57:15",
+  "git_commit": "45e495b",
+  "command": "D:\\工程学习\\project5-ai-knowledge-base\\backend\\eval\\retrieval_eval.py",
+  "embedding": {
+    "model": "all-MiniLM-L6-v2",
+    "dim": 384
+  },
+  "chunking": {
+    "strategy": "recursive",
+    "chunk_size": 400,
+    "chunk_overlap": 60
+  },
+  "corpus": {
+    "files": [
+      "bluewhale41_full.txt",
+      "bluewhale42_full.txt",
+      "budget_42_2026.txt",
+      "data_platform_spec.txt",
+      "ops_log_42_2026Q3.txt",
+      "safety_protocol.txt",
+      "sonar_buoy_manual.txt",
+      "southchina_sea_survey.txt"
+    ],
+    "count": 8,
+    "chunks": 45,
+    "sha256": "89231f4c9b19e5e7"
+  },
+  "test_set": {
+    "path": "backend/eval/test_set.json",
+    "cases": 26,
+    "sha256": "03b63f16834c5d19"
+  },
+  "no_answer_threshold": 0.5,
+  "k": 3,
+  "metrics": {
+    "doc_hit@3": 0.6087,
+    "chunk_hit@3": 0.2174,
+    "mrr": 0.1667,
+    "no_answer_fp_rate": 0.0,
+    "false_reject_rate": 0.4348
+  },
+  "counts": {
+    "scored_cases": 23,
+    "no_answer_cases": 3
+  },
+  "threshold_sweep": [
+    {
+      "threshold": 0.3,
+      "false_answer": 3,
+      "false_answer_rate": 1.0,
+      "false_reject": 0,
+      "false_reject_rate": 0.0,
+      "error_rate": 0.1154
+    },
+    {
+      "threshold": 0.35,
+      "false_answer": 3,
+      "false_answer_rate": 1.0,
+      "false_reject": 0,
+      "false_reject_rate": 0.0,
+      "error_rate": 0.1154
+    },
+    {
+      "threshold": 0.4,
+      "false_answer": 3,
+      "false_answer_rate": 1.0,
+      "false_reject": 0,
+      "false_reject_rate": 0.0,
+      "error_rate": 0.1154
+    },
+    {
+      "threshold": 0.45,
+      "false_answer": 3,
+      "false_answer_rate": 1.0,
+      "false_reject": 3,
+      "false_reject_rate": 0.1304,
+      "error_rate": 0.2308
+    },
+    {
+      "threshold": 0.5,
+      "false_answer": 0,
+      "false_answer_rate": 0.0,
+      "false_reject": 10,
+      "false_reject_rate": 0.4348,
+      "error_rate": 0.3846
+    },
+    {
+      "threshold": 0.55,
+      "false_answer": 0,
+      "false_answer_rate": 0.0,
+      "false_reject": 20,
+      "false_reject_rate": 0.8696,
+      "error_rate": 0.7692
+    },
+    {
+      "threshold": 0.6,
+      "false_answer": 0,
+      "false_answer_rate": 0.0,
+      "false_reject": 21,
+      "false_reject_rate": 0.913,
+      "error_rate": 0.8077
+    }
+  ],
+  "per_question": [
+    {
+      "id": 1,
+      "type": "single",
+      "question": "蓝鲸计划42号的部署地点和监测深度分别是？",
+      "gold_docs": [
+        "bluewhale42_full.txt"
+      ],
+      "doc_hit": false,
+      "chunk_first_hit_rank": 3,
+      "top1_score": 0.4811,
+      "top_files": [
+        "bluewhale41_full.txt",
+        "safety_protocol.txt",
+        "sonar_buoy_manual.txt"
+      ]
+    },
+    {
+      "id": 2,
+      "type": "single",
+      "question": "蓝鲸计划42号一共部署了多少台设备？采样频率是多少？",
+      "gold_docs": [
+        "bluewhale42_full.txt"
+      ],
+      "doc_hit": true,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.5057,
+      "top_files": [
+        "bluewhale41_full.txt",
+        "data_platform_spec.txt",
+        "bluewhale42_full.txt"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "single",
+      "question": "蓝鲸计划42号的浮标电池标称续航多久？",
+      "gold_docs": [
+        "bluewhale42_full.txt"
+      ],
+      "doc_hit": true,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.537,
+      "top_files": [
+        "budget_42_2026.txt",
+        "data_platform_spec.txt",
+        "bluewhale42_full.txt"
+      ]
+    },
+    {
+      "id": 4,
+      "type": "single",
+      "question": "蓝鲸计划42号用的被动声呐能区分几种鲸类？",
+      "gold_docs": [
+        "bluewhale42_full.txt"
+      ],
+      "doc_hit": false,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.55,
+      "top_files": [
+        "budget_42_2026.txt",
+        "sonar_buoy_manual.txt",
+        "data_platform_spec.txt"
+      ]
+    },
+    {
+      "id": 5,
+      "type": "single",
+      "question": "蓝鲸计划41号的部署地点和监测深度分别是？",
+      "gold_docs": [
+        "bluewhale41_full.txt"
+      ],
+      "doc_hit": true,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.4977,
+      "top_files": [
+        "bluewhale41_full.txt",
+        "bluewhale42_full.txt",
+        "sonar_buoy_manual.txt"
+      ]
+    },
+    {
+      "id": 6,
+      "type": "single",
+      "question": "蓝鲸计划41号部署了多少台浮标？多久采样一次？",
+      "gold_docs": [
+        "bluewhale41_full.txt"
+      ],
+      "doc_hit": true,
+      "chunk_first_hit_rank": 2,
+      "top1_score": 0.4775,
+      "top_files": [
+        "budget_42_2026.txt",
+        "bluewhale41_full.txt",
+        "data_platform_spec.txt"
+      ]
+    },
+    {
+      "id": 7,
+      "type": "single",
+      "question": "蓝鲸计划41号的浮标电池标称续航多久？",
+      "gold_docs": [
+        "bluewhale41_full.txt"
+      ],
+      "doc_hit": false,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.5211,
+      "top_files": [
+        "budget_42_2026.txt",
+        "data_platform_spec.txt",
+        "sonar_buoy_manual.txt"
+      ]
+    },
+    {
+      "id": 8,
+      "type": "single",
+      "question": "蓝鲸计划41号能区分几种鲸类？",
+      "gold_docs": [
+        "bluewhale41_full.txt"
+      ],
+      "doc_hit": false,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.544,
+      "top_files": [
+        "sonar_buoy_manual.txt",
+        "budget_42_2026.txt",
+        "bluewhale42_full.txt"
+      ]
+    },
+    {
+      "id": 9,
+      "type": "single",
+      "question": "SB-300 型浮标的内置存储容量是多少？",
+      "gold_docs": [
+        "sonar_buoy_manual.txt"
+      ],
+      "doc_hit": true,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.4536,
+      "top_files": [
+        "sonar_buoy_manual.txt",
+        "sonar_buoy_manual.txt",
+        "sonar_buoy_manual.txt"
+      ]
+    },
+    {
+      "id": 10,
+      "type": "single",
+      "question": "设备手册给出的推荐巡检周期是多久？",
+      "gold_docs": [
+        "sonar_buoy_manual.txt"
+      ],
+      "doc_hit": false,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.4338,
+      "top_files": [
+        "data_platform_spec.txt",
+        "budget_42_2026.txt",
+        "safety_protocol.txt"
+      ]
+    },
+    {
+      "id": 11,
+      "type": "single",
+      "question": "故障码 E03 代表什么？",
+      "gold_docs": [
+        "sonar_buoy_manual.txt"
+      ],
+      "doc_hit": true,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.4349,
+      "top_files": [
+        "data_platform_spec.txt",
+        "sonar_buoy_manual.txt",
+        "bluewhale41_full.txt"
+      ]
+    },
+    {
+      "id": 12,
+      "type": "single",
+      "question": "42 号项目 2026 年第三季度的实际巡检间隔是多少天？",
+      "gold_docs": [
+        "ops_log_42_2026Q3.txt"
+      ],
+      "doc_hit": true,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.6578,
+      "top_files": [
+        "budget_42_2026.txt",
+        "budget_42_2026.txt",
+        "ops_log_42_2026Q3.txt"
+      ]
+    },
+    {
+      "id": 13,
+      "type": "single",
+      "question": "F-03 浮标在第三季度出了什么故障？",
+      "gold_docs": [
+        "ops_log_42_2026Q3.txt"
+      ],
+      "doc_hit": true,
+      "chunk_first_hit_rank": 1,
+      "top1_score": 0.5402,
+      "top_files": [
+        "ops_log_42_2026Q3.txt",
+        "ops_log_42_2026Q3.txt",
+        "sonar_buoy_manual.txt"
+      ]
+    },
+    {
+      "id": 14,
+      "type": "single",
+      "question": "预警系统提前几天发现 F-07 的密封圈劣化？",
+      "gold_docs": [
+        "ops_log_42_2026Q3.txt"
+      ],
+      "doc_hit": true,
+      "chunk_first_hit_rank": 1,
+      "top1_score": 0.5363,
+      "top_files": [
+        "ops_log_42_2026Q3.txt",
+        "budget_42_2026.txt",
+        "ops_log_42_2026Q3.txt"
+      ]
+    },
+    {
+      "id": 15,
+      "type": "multi_hop",
+      "question": "41 号和 42 号的采样频率分别是多少？",
+      "gold_docs": [
+        "bluewhale41_full.txt",
+        "bluewhale42_full.txt"
+      ],
+      "doc_hit": false,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.5142,
+      "top_files": [
+        "budget_42_2026.txt",
+        "sonar_buoy_manual.txt",
+        "data_platform_spec.txt"
+      ]
+    },
+    {
+      "id": 16,
+      "type": "multi_hop",
+      "question": "两个项目用的电池类型有什么不同？",
+      "gold_docs": [
+        "bluewhale41_full.txt",
+        "bluewhale42_full.txt"
+      ],
+      "doc_hit": false,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.4197,
+      "top_files": [
+        "sonar_buoy_manual.txt",
+        "bluewhale42_full.txt",
+        "safety_protocol.txt"
+      ]
+    },
+    {
+      "id": 17,
+      "type": "multi_hop",
+      "question": "手册推荐的巡检周期和 42 号项目规程要求的一样吗？",
+      "gold_docs": [
+        "sonar_buoy_manual.txt",
+        "bluewhale42_full.txt"
+      ],
+      "doc_hit": false,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.4654,
+      "top_files": [
+        "data_platform_spec.txt",
+        "budget_42_2026.txt",
+        "safety_protocol.txt"
+      ]
+    },
+    {
+      "id": 18,
+      "type": "no_answer",
+      "question": "蓝鲸计划42号的项目总负责人是谁？",
+      "gold_docs": [],
+      "doc_hit": false,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.4773,
+      "top_files": [
+        "budget_42_2026.txt",
+        "bluewhale42_full.txt",
+        "data_platform_spec.txt"
+      ]
+    },
+    {
+      "id": 19,
+      "type": "no_answer",
+      "question": "SB-300 型浮标是哪家工厂生产的？",
+      "gold_docs": [],
+      "doc_hit": false,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.461,
+      "top_files": [
+        "sonar_buoy_manual.txt",
+        "sonar_buoy_manual.txt",
+        "sonar_buoy_manual.txt"
+      ]
+    },
+    {
+      "id": 20,
+      "type": "no_answer",
+      "question": "41 号项目一期海试的船员名单有哪些人？",
+      "gold_docs": [],
+      "doc_hit": false,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.4572,
+      "top_files": [
+        "budget_42_2026.txt",
+        "southchina_sea_survey.txt",
+        "safety_protocol.txt"
+      ]
+    },
+    {
+      "id": 21,
+      "type": "single",
+      "question": "L2 注册用户单次导出数据的行数上限是多少？",
+      "gold_docs": [
+        "data_platform_spec.txt"
+      ],
+      "doc_hit": true,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.4966,
+      "top_files": [
+        "sonar_buoy_manual.txt",
+        "data_platform_spec.txt",
+        "data_platform_spec.txt"
+      ]
+    },
+    {
+      "id": 22,
+      "type": "single",
+      "question": "浮标偏离设计点位超过多少米判定为漂移？",
+      "gold_docs": [
+        "safety_protocol.txt"
+      ],
+      "doc_hit": true,
+      "chunk_first_hit_rank": 1,
+      "top1_score": 0.4967,
+      "top_files": [
+        "safety_protocol.txt",
+        "bluewhale42_full.txt",
+        "sonar_buoy_manual.txt"
+      ]
+    },
+    {
+      "id": 23,
+      "type": "multi_hop",
+      "question": "42 号的回传周期和平台可查询的延迟分别是多少？",
+      "gold_docs": [
+        "bluewhale42_full.txt",
+        "data_platform_spec.txt"
+      ],
+      "doc_hit": true,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.6065,
+      "top_files": [
+        "budget_42_2026.txt",
+        "bluewhale42_full.txt",
+        "data_platform_spec.txt"
+      ]
+    },
+    {
+      "id": 24,
+      "type": "single",
+      "question": "42 号项目一期设备采购预算是多少？",
+      "gold_docs": [
+        "budget_42_2026.txt"
+      ],
+      "doc_hit": true,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.5018,
+      "top_files": [
+        "budget_42_2026.txt",
+        "sonar_buoy_manual.txt",
+        "data_platform_spec.txt"
+      ]
+    },
+    {
+      "id": 25,
+      "type": "single",
+      "question": "2025 年南海走航调查一共识别出几种鲸类？",
+      "gold_docs": [
+        "southchina_sea_survey.txt"
+      ],
+      "doc_hit": true,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.5485,
+      "top_files": [
+        "southchina_sea_survey.txt",
+        "safety_protocol.txt",
+        "budget_42_2026.txt"
+      ]
+    },
+    {
+      "id": 26,
+      "type": "multi_hop",
+      "question": "42 号浮标为什么没有布设在西沙核心区？",
+      "gold_docs": [
+        "southchina_sea_survey.txt",
+        "sonar_buoy_manual.txt"
+      ],
+      "doc_hit": false,
+      "chunk_first_hit_rank": null,
+      "top1_score": 0.504,
+      "top_files": [
+        "data_platform_spec.txt",
+        "budget_42_2026.txt",
+        "safety_protocol.txt"
+      ]
+    }
+  ]
+}
