@@ -40,7 +40,7 @@ React 前端 (5173 / Nginx)
 FastAPI 后端 (8001)
    ├─ users/threads/documents        资源模块
    ├─ chat  → LangGraph ReAct Agent
-   │            ├─ LLM: DeepSeek(OpenAI兼容协议)
+   │            ├─ LLM: 智谱 GLM-4-Flash(OpenAI兼容协议)
    │            ├─ tools: 文档检索(retrieve_user_documents) + 联网搜索(web_search)
    │            └─ checkpointer: SQLite 多轮记忆
    ├─ db: PostgreSQL(主库) + Chroma(向量库)
@@ -54,7 +54,7 @@ FastAPI 后端 (8001)
 |---|---|---|
 | 后端 | FastAPI + SQLAlchemy(async) | 异步全栈，自动文档 |
 | Agent | LangGraph `create_agent` | ReAct：推理 + 工具调用循环 |
-| LLM | DeepSeek(v4-flash) | OpenAI 兼容协议，ChatOpenAI 接入 |
+| LLM | 智谱 GLM-4-Flash（免费档） | OpenAI 兼容协议，ChatOpenAI 接入；换服务商只改 `config.py` 三个值，业务代码不动 |
 | Embedding | bge-small-zh-v1.5 | 本地模型（fastembed/ONNX，512 维），中文效果好、免费无 key、不用装 torch |
 | 精排 | bge-reranker-v2-m3-int8 | cross-encoder 交叉编码，本地 ONNX 推理；把「话题相关」校正成「真的含答案」 |
 | 向量库 | Chroma | 文档切片向量检索 |
@@ -68,7 +68,7 @@ FastAPI 后端 (8001)
 
 ## 五、部署方式
 
-前置条件：Docker Desktop；项目根 `.env` 配 `DEEPSEEK_API_KEY` / `BOCHA_API_KEY`（见 `.env.example`）。
+前置条件：Docker Desktop；项目根 `.env` 配 `LLM_API_KEY` / `BOCHA_API_KEY`（见 `.env.example`）。LLM 默认接智谱 GLM-4-Flash（免费档，申请即用）；换 DeepSeek/OpenAI 只改 `config.py` 三个值，业务代码不动。
 
 ```bash
 docker compose up -d --build    # 后端起 8001，前端起 5173，Postgres 起 5434（避开 project6 的 5432）
@@ -147,7 +147,20 @@ backend/eval/
 | 有答案题假阴率 | 0.0 | 0.0 | 有资料却说没有的比例 |
 | 检索耗时 | 4 ms | 0.96 s | 单次查询，CPU/ONNX |
 
-生成评估（LLM-as-Judge，单文档 10 题基线）：平均正确性 **5.0 / 5**、平均忠实度 **4.7 / 5**（#3 的 2 分为 Judge 误判，人工抽查校正）。26 题版正在分批重跑（脚本支持 `--limit` 断点续跑，见 7.7）。
+生成评估（LLM-as-Judge，**26 题全量** / k=3 / 走生产同一个 `query_with_sources` 检索入口）：平均正确性 **3.85 / 5**、平均忠实度 **4.04 / 5**。
+
+> ⚠️ 两组分数不要混着看：上表是**检索层**指标，跟用哪个大模型无关；这行是**生成层**指标。
+> 也不能和早期 DeepSeek 版的 5.0 / 4.7 直接比 —— 这次被测模型和判分模型**同时**从 DeepSeek 换成了免费的智谱 GLM-4-Flash（原 key 余额耗尽），判分尺度跟着变（判分器倾向于认可同风格的输出）。换模型只为让任何人 clone 下来都能零成本复现评估。
+
+低分题（7/26）逐题人工过了一遍，分三类，指向完全不同的修法：
+
+| 类型 | 题号 | 现象 | 归因 |
+|---|---|---|---|
+| 相似文档数字混淆 | #3 #7 | 42 号续航答 240 天（应 180）、41 号答 180 天（应 240），**两题正好互换** | 41/42 号两份项目文档高度同源，免费模型对相邻上下文的区分力弱于 DeepSeek；不是检索没捞到 |
+| 检索未覆盖 | #2 #15 | 模型如实答"资料中未提及"42 号采样频率 | 该事实所在切片没进 top-3。答"不知道"是忠实度的正确表现，但正确性扣分 |
+| 抽象归纳丢细节 | #16 | 把"磷酸铁锂 / 锂亚硫酰氯"归纳成"充电 / 一次性电池" | 模型为规避编造而过度抽象，术语信息量下降 |
+
+三类对应三条可下手的方向：①同源多版本文档做元数据消歧（曾试过给切片加"文档身份前缀"，是负结果——把同文档切片捆在一起反而挤掉别家，已默认关闭）②最终 top-k 从 3 提到 5，补多跳题的召回（代价是上下文变长、更容易被无关片段带偏）③prompt 明确要求"保留原文术语，不要归纳成上位词"。
 
 ### 7.3 一轮完整实验记录（每次只改一个变量）
 
@@ -208,13 +221,15 @@ cd backend
 ..\.venv\Scripts\python.exe -m eval.retrieval_eval --rerank --no-min-score     # 不丢低分片段
 ..\.venv\Scripts\python.exe -m eval.retrieval_eval --rerank --rerank-model BAAI/bge-reranker-base  # 换精排模型
 
-# 生成评估（LLM-as-Judge，每题 2 次 LLM 调用）
+# 生成评估（LLM-as-Judge，每题 2 次 LLM 调用；默认智谱 GLM-4-Flash 免费档，无需充值）
 ..\.venv\Scripts\python.exe -m eval.generation_eval                # 全部跑完
 ..\.venv\Scripts\python.exe -m eval.generation_eval --limit 5      # 只跑 5 题
 ..\.venv\Scripts\python.exe -m eval.generation_eval --rerun        # 丢掉旧结果重跑
 ```
 
 生成评估是**断点续跑**的：每答完一题立刻落盘到 `reports/generation_<模型名>.json`，重跑时自动跳过已完成的题号。所以要调 LLM 的评估不怕中途断（余额不足 / 限流 / 网络抖动很常见），补上余额再跑同一条命令就从断点继续，前面已经花掉的钱不会白花。
+
+换大模型只动三处，业务代码一行不改：`.env` 的 `LLM_API_KEY`、`backend/app/config.py` 的 `model_name` 和 `model_base_url`（三者都是 OpenAI 兼容协议）。报告名带模型名，所以换模型不会覆盖旧结果，可以直接并排看差异。
 
 每次运行会把完整结果写进 `backend/eval/reports/`（含每题的命中情况、分数、阈值扫描表），不同配置的报告名带 `_nor` / `_rr` / `_rr9` 等后缀，可以并存对照。
 

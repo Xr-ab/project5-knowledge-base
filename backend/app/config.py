@@ -8,8 +8,9 @@ import os  # 读环境变量（容器里用 DATA_DIR/PROJECT_ROOT 覆盖默认�
 from pathlib import Path  # 路径对象：跨平台，比字符串拼接安全
 
 from loguru import logger  # 第三方日志库：好看 + 自动轮转压缩
-from pydantic import Field, SecretStr
-# Field: 字段配置（别名等）；SecretStr: 密钥类型，打印自动打码成 ******
+from pydantic import AliasChoices, Field, SecretStr
+# Field: 字段配置（别名等）；AliasChoices: 一个字段接受多个环境变量名（按序回退）；
+# SecretStr: 密钥类型，打印自动打码成 ******
 from pydantic_settings import BaseSettings, SettingsConfigDict
 # BaseSettings: 配置类的父类（自动读环境变量/.env）；
 # SettingsConfigDict: 行为配置（从哪个文件读等）
@@ -47,10 +48,15 @@ class Settings(BaseSettings):
     声明字段但不写默认值（api_key/bocha_api_key）= 必填，
     缺失时构造 Settings() 立即报错（早失败，不拖到运行期才炸）。
     """
-    api_key: SecretStr = Field(alias="DEEPSEEK_API_KEY")  # DeepSeek 大模型 Key（必填）
-    model_provider: str = "openai"                        # 走 OpenAI 兼容协议接 DeepSeek
-    model_name: str = "deepseek-v4-flash"                 # 模型名
-    model_base_url: str | None = "https://api.deepseek.com/v1"  # DeepSeek 的 API 地址
+    # 大模型 Key（必填）。别名按顺序找：先 LLM_API_KEY，找不到才回退旧名 DEEPSEEK_API_KEY。
+    # 为什么留两个名字：这两个字段原本叫 DeepSeek，现在服务商可换（见 model_name 注释），
+    # 但旧 .env / 部署脚本里还是 DEEPSEEK_API_KEY，直接改名会让它们启动即报错（早失败设计反噬）。
+    api_key: SecretStr = Field(alias=AliasChoices("LLM_API_KEY", "DEEPSEEK_API_KEY"))
+    model_provider: str = "openai"                        # 走 OpenAI 兼容协议（智谱/DeepSeek/OpenAI 都是这套）
+    # 当前用智谱 GLM-4-Flash：免费档，够跑评估和演示。充了 DeepSeek 想切回去，
+    # 只改这三个值（model_name / model_base_url / .env 的 key），代码一行不动。
+    model_name: str = "glm-4-flash"                       # 模型名
+    model_base_url: str | None = "https://open.bigmodel.cn/api/paas/v4"  # 智谱的 API 地址
     embeddings_model_name: str = "BAAI/bge-small-zh-v1.5"  # 向量模型（粗召，512 维，无需 key）
     reranker_model_name: str = "BAAI/bge-reranker-v2-m3-int8"  # 精排模型（交叉编码，0.57GB）
     rerank_enabled: bool = True                           # 检索是否走两段式（粗召 → 精排）

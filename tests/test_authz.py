@@ -13,7 +13,7 @@ import os
 import uuid
 
 # ⚠️ 必须在 import app 之前：app.config 模块级会构造 Settings()（必填字段）
-os.environ.setdefault("DEEPSEEK_API_KEY", "env-test-key")
+os.environ.setdefault("LLM_API_KEY", "env-test-key")
 os.environ.setdefault("BOCHA_API_KEY", "env-test-bocha")
 
 from fastapi.testclient import TestClient

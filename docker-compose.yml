@@ -31,7 +31,7 @@ services:
     # 改宿主机端口时只动左边这个数，容器内 8000 别动（那是 uvicorn 监听的）
     ports:
       - "8001:8000"
-    # 环境变量：从宿主机的 .env 读（你的 DEEPSEEK_API_KEY / BOCHA_API_KEY 都在那）
+    # 环境变量：从宿主机的 .env 读（你的 LLM_API_KEY / BOCHA_API_KEY 都在那）
     # env_file 把 .env 所有键注入容器，代码里 settings 自动读到
     env_file:
       - .env

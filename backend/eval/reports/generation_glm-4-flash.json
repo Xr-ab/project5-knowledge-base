@@ -1,0 +1,488 @@
+{
+  "generated_at": "2026-10-21T16:16:56",
+  "command": "D:\\工程学习\\project5-ai-knowledge-base\\backend\\eval\\generation_eval.py",
+  "model": "glm-4-flash",
+  "judge_model": "glm-4-flash",
+  "retrieval": "query_with_sources（生产路径，含两段式精排）",
+  "progress": {
+    "done": 26,
+    "total": 26
+  },
+  "rows": [
+    {
+      "id": 1,
+      "question": "蓝鲸计划42号的部署地点和监测深度分别是？",
+      "expected_answer": "部署在南海（东经 115.2°，北纬 18.5°），监测深度为水下 300 米。",
+      "gold_docs": [
+        "bluewhale42_full.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "115.2",
+        "300 米"
+      ],
+      "answer": "蓝鲸计划42号的部署地点是珠江口外海，具体位置是在300米等深线附近。监测深度范围从珠江口的40米到中沙的1800米，而西沙区块的平均水深为900米，超过了SB-300型浮标的额定工作深度。",
+      "scores": {
+        "correctness": 3,
+        "faithfulness": 4,
+        "reason": "模型回答中包含了部署地点和监测深度范围的信息，但未提及具体经纬度，与期望答案不完全一致。"
+      }
+    },
+    {
+      "id": 2,
+      "question": "蓝鲸计划42号一共部署了多少台设备？采样频率是多少？",
+      "expected_answer": "共 12 台声呐浮标，每 10 分钟采样一次。",
+      "gold_docs": [
+        "bluewhale42_full.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "12 台",
+        "10 分钟"
+      ],
+      "answer": "根据提供的资料，蓝鲸计划42号项目部署了18台浮标，但并未提供采样频率的具体信息。以下是相关资料的摘录：\n\n## 八、项目里程碑\n2025-11 一期完成部署并开始试运行；\n\n## 九、与 42 号项目的差异说明\n【测试文档】蓝鲸计划42号 · 2026 年第三季度运维记录\n## 一、期间概况\n本记录覆盖 2026 年 7 月 1 日至 9 月 30 日，共 92 天。期间 12 台浮标全部在线...\n\n由于资料中没有提及采样频率，因此无法提供这一信息。",
+      "scores": {
+        "correctness": 3,
+        "faithfulness": 4,
+        "reason": "模型回答正确地指出了资料中没有提供采样频率的具体信息，但未能提供期望答案中的具体数字。回答忠实于资料内容，但缺乏对期望答案的完全回应。"
+      }
+    },
+    {
+      "id": 3,
+      "question": "蓝鲸计划42号的浮标电池标称续航多久？",
+      "expected_answer": "锂亚硫酰氯电池组，标称续航 180 天。",
+      "gold_docs": [
+        "bluewhale42_full.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "180 天"
+      ],
+      "answer": "蓝鲸计划42号的浮标电池标称续航为240天。",
+      "scores": {
+        "correctness": 2,
+        "faithfulness": 3,
+        "reason": "模型回答中的续航天数与参考答案不符，但提供了正确的电池类型信息。"
+      }
+    },
+    {
+      "id": 4,
+      "question": "蓝鲸计划42号用的被动声呐能区分几种鲸类？",
+      "expected_answer": "被动声呐加 AI 声纹识别，可区分 7 种鲸类。",
+      "gold_docs": [
+        "bluewhale42_full.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "7 种"
+      ],
+      "answer": "蓝鲸计划42号使用的被动声呐结合AI声纹识别技术，可以区分7种鲸类，包括蓝鲸、长须鲸、座头鲸、抹香鲸、虎鲸、中华白海豚和灰鲸。",
+      "scores": {
+        "correctness": 4,
+        "faithfulness": 4,
+        "reason": "模型回答正确地总结了42号项目中使用的被动声呐结合AI声纹识别技术，能够区分7种鲸类，但未提及具体鲸类的名称，与参考答案相比，信息量略有减少。"
+      }
+    },
+    {
+      "id": 5,
+      "question": "蓝鲸计划41号的部署地点和监测深度分别是？",
+      "expected_answer": "部署在东海（东经 122.6°，北纬 26.8°），监测深度为水下 500 米。",
+      "gold_docs": [
+        "bluewhale41_full.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "122.6",
+        "500 米"
+      ],
+      "answer": "蓝鲸计划41号的部署地点是东海（东经 122.6°，北纬 26.8°）附近海域，监测深度为水下 500 米。",
+      "scores": {
+        "correctness": 5,
+        "faithfulness": 5,
+        "reason": "模型回答准确无误地概括了参考片段中的关键信息，包括部署地点和监测深度。"
+      }
+    },
+    {
+      "id": 6,
+      "question": "蓝鲸计划41号部署了多少台浮标？多久采样一次？",
+      "expected_answer": "共 18 台声呐浮标，每 30 分钟采样一次。",
+      "gold_docs": [
+        "bluewhale41_full.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "18 台",
+        "30 分钟"
+      ],
+      "answer": "蓝鲸计划41号部署了18台声呐浮标。采样频率为每30分钟一次。",
+      "scores": {
+        "correctness": 4,
+        "faithfulness": 4,
+        "reason": "模型回答正确地提取了声呐浮标数量和采样频率的信息，但未提及部署地点和监测深度等细节，因此正确性评分略低。忠实度评分与正确性相同，因为回答忠实于原文提供的信息。"
+      }
+    },
+    {
+      "id": 7,
+      "question": "蓝鲸计划41号的浮标电池标称续航多久？",
+      "expected_answer": "磷酸铁锂电池组，标称续航 240 天。",
+      "gold_docs": [
+        "bluewhale41_full.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "240 天"
+      ],
+      "answer": "蓝鲸计划41号的浮标电池标称续航为180天。",
+      "scores": {
+        "correctness": 3,
+        "faithfulness": 3,
+        "reason": "模型回答中提到的续航天数与参考答案不符，但提供了41号项目的具体信息，具有一定的相关性。"
+      }
+    },
+    {
+      "id": 8,
+      "question": "蓝鲸计划41号能区分几种鲸类？",
+      "expected_answer": "双模方案，可区分 9 种鲸类。",
+      "gold_docs": [
+        "bluewhale41_full.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "9 种"
+      ],
+      "answer": "蓝鲸计划41号能区分9种鲸类，包括蓝鲸、长须鲸、座头鲸、抹香鲸、虎鲸、中华白海豚、灰鲸、小须鲸和伪虎鲸。",
+      "scores": {
+        "correctness": 4,
+        "faithfulness": 4,
+        "reason": "模型回答正确地总结了参考答案中的信息，但未提及模型基于YOLOv8检测框架和CRNN声纹分类头等细节。"
+      }
+    },
+    {
+      "id": 9,
+      "question": "SB-300 型浮标的内置存储容量是多少？",
+      "expected_answer": "64GB 工业级 eMMC。",
+      "gold_docs": [
+        "sonar_buoy_manual.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "64GB"
+      ],
+      "answer": "SB-300 型浮标的内置存储容量是 64GB 工业级 eMMC 存储。",
+      "scores": {
+        "correctness": 4,
+        "faithfulness": 4,
+        "reason": "模型回答正确地引用了参考片段中的信息，但未完全复述原文，而是用自己的话进行了概括。"
+      }
+    },
+    {
+      "id": 10,
+      "question": "设备手册给出的推荐巡检周期是多久？",
+      "expected_answer": "手册推荐 180 天，但需按水温与维护条件缩短到 90 至 120 天。",
+      "gold_docs": [
+        "sonar_buoy_manual.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "180 天"
+      ],
+      "answer": "设备手册给出的推荐巡检周期为 180 天。",
+      "scores": {
+        "correctness": 3,
+        "faithfulness": 4,
+        "reason": "模型回答正确地引用了手册推荐的巡检周期，但未提及根据实际条件调整巡检周期的内容。"
+      }
+    },
+    {
+      "id": 11,
+      "question": "故障码 E03 代表什么？",
+      "expected_answer": "密封腔湿度超标，通常对应密封圈老化。",
+      "gold_docs": [
+        "sonar_buoy_manual.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "密封腔湿度"
+      ],
+      "answer": "故障码 E03 代表密封腔湿度超标。通常这一情况对应密封圈老化，需要返厂或进行水下作业更换密封圈。",
+      "scores": {
+        "correctness": 5,
+        "faithfulness": 5,
+        "reason": "模型回答准确无误地解释了故障码E03的含义，并提供了相应的处理建议，与参考答案完全一致。"
+      }
+    },
+    {
+      "id": 12,
+      "question": "42 号项目 2026 年第三季度的实际巡检间隔是多少天？",
+      "expected_answer": "实际间隔 120 天，超出规程规定的 90 天。",
+      "gold_docs": [
+        "ops_log_42_2026Q3.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "120 天"
+      ],
+      "answer": "42号项目2026年第三季度的实际巡检间隔是120天。根据资料中的描述，按计划应于7月中旬执行本年度第二次计划巡检，但实际于8月2日执行，本次巡检实际距上次巡检120天。",
+      "scores": {
+        "correctness": 4,
+        "faithfulness": 4,
+        "reason": "模型回答正确地指出了巡检间隔为120天，但未提及规程规定的90天周期，因此忠实度略有不足。"
+      }
+    },
+    {
+      "id": 13,
+      "question": "F-03 浮标在第三季度出了什么故障？",
+      "expected_answer": "密封腔湿度超标（E03），判定为密封圈老化，更换 O 型圈后恢复。",
+      "gold_docs": [
+        "ops_log_42_2026Q3.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "F-03",
+        "密封圈"
+      ],
+      "answer": "F-03 浮标在第三季度出现的故障是密封腔湿度超过阈值。具体来说，8 月 3 日巡检时读数显示密封腔湿度为 42%，超过了阈值 30%，对应的故障码为 E03。现场判定为密封圈老化，随后进行了更换上下两组 O 型圈并做了气密测试，测试压力为 4.5 兆帕，保压 30 分钟无泄漏。该浮标于 8 月 4 日恢复采样，但在此期间中断了 21 小时的采样。",
+      "scores": {
+        "correctness": 4,
+        "faithfulness": 4,
+        "reason": "模型回答准确描述了F-03浮标的故障和处置过程，但未提及故障码E03和恢复采样的具体日期8月4日。"
+      }
+    },
+    {
+      "id": 14,
+      "question": "预警系统提前几天发现 F-07 的密封圈劣化？",
+      "expected_answer": "提前 6 天发出提示。",
+      "gold_docs": [
+        "ops_log_42_2026Q3.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "6 天"
+      ],
+      "answer": "预警系统提前6天发现F-07的密封圈劣化。",
+      "scores": {
+        "correctness": 4,
+        "faithfulness": 4,
+        "reason": "模型回答正确地指出了预警系统提前发现F-07的密封圈劣化，但未提及是提前6天，这一点在参考答案中有提及，但不是关键信息。"
+      }
+    },
+    {
+      "id": 15,
+      "question": "41 号和 42 号的采样频率分别是多少？",
+      "expected_answer": "41 号每 30 分钟一次，42 号每 10 分钟一次。",
+      "gold_docs": [
+        "bluewhale41_full.txt",
+        "bluewhale42_full.txt"
+      ],
+      "type": "multi_hop",
+      "gold_keywords": [
+        "30 分钟",
+        "10 分钟"
+      ],
+      "answer": "根据提供的资料，41 号项目的采样频率是每30分钟一次。资料中并未提及42号项目的采样频率，因此无法确定42号项目的采样频率。",
+      "scores": {
+        "correctness": 3,
+        "faithfulness": 4,
+        "reason": "正确回答了41号项目的采样频率，但对42号项目的采样频率无法确定，因此忠实度较高。"
+      }
+    },
+    {
+      "id": 16,
+      "question": "两个项目用的电池类型有什么不同？",
+      "expected_answer": "41 号用磷酸铁锂电池组，42 号用锂亚硫酰氯电池组。",
+      "gold_docs": [
+        "bluewhale41_full.txt",
+        "bluewhale42_full.txt"
+      ],
+      "type": "multi_hop",
+      "gold_keywords": [
+        "磷酸铁锂",
+        "锂亚硫酰氯"
+      ],
+      "answer": "两个项目用的电池类型不同。41号项目使用充电电池，而42号项目使用一次性电池。",
+      "scores": {
+        "correctness": 3,
+        "faithfulness": 3,
+        "reason": "回答正确地指出了两个项目使用的电池类型不同，但未完全复述期望答案中的具体电池类型。"
+      }
+    },
+    {
+      "id": 17,
+      "question": "手册推荐的巡检周期和 42 号项目规程要求的一样吗？",
+      "expected_answer": "不一样：手册推荐 180 天，42 号项目规程要求 90 天（夏季缩短到 60 天）。",
+      "gold_docs": [
+        "sonar_buoy_manual.txt",
+        "bluewhale42_full.txt"
+      ],
+      "type": "multi_hop",
+      "gold_keywords": [
+        "180 天",
+        "90 天"
+      ],
+      "answer": "根据提供的资料，手册推荐的巡检周期为180天，但这一数字是基于标准温带海域的实验室老化模型。实际项目应根据水温、生物附着速率和维护船可用性调整，通常缩短到90至120天。因此，手册推荐的巡检周期和42号项目规程要求的不完全一样，42号项目规程要求的巡检周期通常会更短。",
+      "scores": {
+        "correctness": 4,
+        "faithfulness": 4,
+        "reason": "模型回答正确地指出了手册推荐的巡检周期与实际项目规程要求的不同，并给出了合理的解释。"
+      }
+    },
+    {
+      "id": 18,
+      "question": "蓝鲸计划42号的项目总负责人是谁？",
+      "expected_answer": "资料中没有提到项目总负责人，应回答「资料中未提及」而不是编造。",
+      "gold_docs": [],
+      "type": "no_answer",
+      "gold_keywords": [],
+      "answer": "资料中没有提供蓝鲸计划42号的项目总负责人的信息。",
+      "scores": {
+        "correctness": 5,
+        "faithfulness": 5,
+        "reason": "模型回答准确无误地反映了资料中未提及项目总负责人这一事实。"
+      }
+    },
+    {
+      "id": 19,
+      "question": "SB-300 型浮标是哪家工厂生产的？",
+      "expected_answer": "资料中没有提到生产厂家，应回答「资料中未提及」。",
+      "gold_docs": [],
+      "type": "no_answer",
+      "gold_keywords": [],
+      "answer": "资料中并未提及SB-300型浮标的生产厂家信息，因此无法回答SB-300型浮标是哪家工厂生产的。",
+      "scores": {
+        "correctness": 4,
+        "faithfulness": 4,
+        "reason": "模型回答准确反映了资料中未提及生产厂家信息的事实，但未直接引用期望答案中的‘资料中未提及’这一表述。"
+      }
+    },
+    {
+      "id": 20,
+      "question": "41 号项目一期海试的船员名单有哪些人？",
+      "expected_answer": "资料中没有船员名单，应回答「资料中未提及」。",
+      "gold_docs": [],
+      "type": "no_answer",
+      "gold_keywords": [],
+      "answer": "资料中并未提供41号项目一期海试的船员名单，因此无法回答这个问题。",
+      "scores": {
+        "correctness": 4,
+        "faithfulness": 4,
+        "reason": "模型回答准确反映了资料中未提及船员名单的事实，但可以更简洁地表达。"
+      }
+    },
+    {
+      "id": 21,
+      "question": "L2 注册用户单次导出数据的行数上限是多少？",
+      "expected_answer": "5000 行，时间跨度不超过 180 天。",
+      "gold_docs": [
+        "data_platform_spec.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "5000 行"
+      ],
+      "answer": "L2 注册用户单次导出数据的行数上限是5000行。",
+      "scores": {
+        "correctness": 4,
+        "faithfulness": 4,
+        "reason": "回答正确地指出了L2注册用户单次导出数据的行数上限，但未提及时间跨度这一关键信息。"
+      }
+    },
+    {
+      "id": 22,
+      "question": "浮标偏离设计点位超过多少米判定为漂移？",
+      "expected_answer": "超过 500 米判定为漂移。",
+      "gold_docs": [
+        "safety_protocol.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "500 米"
+      ],
+      "answer": "浮标偏离设计点位超过500米判定为漂移。",
+      "scores": {
+        "correctness": 5,
+        "faithfulness": 5,
+        "reason": "模型回答与期望答案完全一致。"
+      }
+    },
+    {
+      "id": 23,
+      "question": "42 号的回传周期和平台可查询的延迟分别是多少？",
+      "expected_answer": "42 号每 2 小时回传一次；平台平均延迟 4 小时，最长 26 小时。",
+      "gold_docs": [
+        "bluewhale42_full.txt",
+        "data_platform_spec.txt"
+      ],
+      "type": "multi_hop",
+      "gold_keywords": [
+        "2 小时",
+        "4 小时"
+      ],
+      "answer": "42 号项目的元数据从浮标回传到可查询的平均延迟是 4 小时，最长延迟是 26 小时。",
+      "scores": {
+        "correctness": 4,
+        "faithfulness": 4,
+        "reason": "模型回答准确描述了42号项目的元数据延迟情况，但未提及回传频率，因此正确性评分稍低。"
+      }
+    },
+    {
+      "id": 24,
+      "question": "42 号项目一期设备采购预算是多少？",
+      "expected_answer": "2100 万元。",
+      "gold_docs": [
+        "budget_42_2026.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "2100 万元"
+      ],
+      "answer": "42号项目一期设备采购预算是2100万元。",
+      "scores": {
+        "correctness": 4,
+        "faithfulness": 4,
+        "reason": "模型回答正确地引用了设备采购预算的金额，但未提及预算科目分类，与参考答案的完整性略有差距。"
+      }
+    },
+    {
+      "id": 25,
+      "question": "2025 年南海走航调查一共识别出几种鲸类？",
+      "expected_answer": "5 种：蓝鲸、长须鲸、座头鲸、抹香鲸、中华白海豚。",
+      "gold_docs": [
+        "southchina_sea_survey.txt"
+      ],
+      "type": "single",
+      "gold_keywords": [
+        "5 种"
+      ],
+      "answer": "2025年南海走航调查一共识别出5种鲸类：蓝鲸、长须鲸、座头鲸、抹香鲸、中华白海豚。",
+      "scores": {
+        "correctness": 4,
+        "faithfulness": 4,
+        "reason": "模型回答正确地总结了调查中识别出的5种鲸类，但未提及调查地点和具体次数，与参考答案相比，信息量略有减少。"
+      }
+    },
+    {
+      "id": 26,
+      "question": "42 号浮标为什么没有布设在西沙核心区？",
+      "expected_answer": "西沙平均水深约 900 米，超过 SB-300 型 300 米的额定工作深度，所以布设在 300 米等深线附近。",
+      "gold_docs": [
+        "southchina_sea_survey.txt",
+        "sonar_buoy_manual.txt"
+      ],
+      "type": "multi_hop",
+      "gold_keywords": [
+        "900 米",
+        "额定工作深度"
+      ],
+      "answer": "42号浮标没有布设在西沙核心区的原因之一是西沙区块的平均水深超过了SB-300型的额定工作深度，即900米。由于浮标的工作深度有限，因此为了确保浮标能够正常工作，最终选择了300米等深线附近的区域进行布设，而不是西沙核心区。",
+      "scores": {
+        "correctness": 4,
+        "faithfulness": 4,
+        "reason": "模型回答正确地解释了浮标没有布设在西沙核心区的原因，但与期望答案相比，表述更为详细，增加了浮标工作深度有限的信息。"
+      }
+    }
+  ],
+  "metrics": {
+    "correctness_avg": 3.85,
+    "faithfulness_avg": 4.04
+  }
+}

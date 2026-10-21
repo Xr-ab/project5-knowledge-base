@@ -3,7 +3,7 @@ import os
 import uuid
 
 # 老规矩：import 前先给环境变量
-os.environ["DEEPSEEK_API_KEY"] = "test-key"
+os.environ["LLM_API_KEY"] = "test-key"
 os.environ["BOCHA_API_KEY"] = "test-bocha"
 
 import pytest

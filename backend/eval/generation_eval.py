@@ -101,7 +101,7 @@ def save(path: Path, rows: list[dict], total: int) -> None:
 
 
 def call_llm(messages: list[dict], temperature: float = 0.2) -> str:
-    """调 DeepSeek 拿回复文本。temperature 调低：评估场景要稳定，不要发散。"""
+    """调大模型拿回复文本。temperature 调低：评估场景要稳定，不要发散。"""
     resp = client.chat.completions.create(
         model=settings.model_name,
         messages=messages,

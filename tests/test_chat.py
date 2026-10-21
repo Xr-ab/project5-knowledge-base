@@ -12,7 +12,7 @@ import uuid
 
 # ⚠️ 必须在 import app 之前：app.config 模块级会构造 Settings()（必填字段）
 # 且本文件字母序在 test_config.py 之前，pytest 先 import 它——所以这里自己兜底
-os.environ["DEEPSEEK_API_KEY"] = "env-test-key"
+os.environ["LLM_API_KEY"] = "env-test-key"
 os.environ["BOCHA_API_KEY"] = "env-test-bocha"
 
 from fastapi.testclient import TestClient

@@ -3,7 +3,7 @@ import os
 
 # ⚠️ 模块 1 的坑第二次出现了：import app.main → app.lifespan → app.config，
 # config 模块级 settings = Settings() 会立即执行，必须先给环境变量
-os.environ["DEEPSEEK_API_KEY"] = "test-key"
+os.environ["LLM_API_KEY"] = "test-key"
 os.environ["BOCHA_API_KEY"] = "test-bocha"
 
 from fastapi.testclient import TestClient

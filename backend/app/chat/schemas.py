@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 
 class PromptInput(BaseModel):
-    """聊天请求体。v1 简化：删掉 model_name，固定用 config 里的 DeepSeek。"""
+    """聊天请求体。v1 简化：删掉 model_name，固定用 config 里的模型。"""
     prompt: str
 
 
